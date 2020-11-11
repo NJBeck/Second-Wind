@@ -1,0 +1,12 @@
+﻿  PositionHandler.cpp
+C:\projects\second wind\src\PositionHandler.cpp(40,40): warning C4267: 'initializing': conversion from 'size_t' to 'unsigned long', possible loss of data
+C:\projects\second wind\src\PositionHandler.cpp(61,28): warning C4244: 'initializing': conversion from 'double' to 'unsigned long', possible loss of data
+C:\projects\second wind\src\PositionHandler.cpp(100,29): warning C4018: '<=': signed/unsigned mismatch
+C:\projects\second wind\src\PositionHandler.cpp(115,67): warning C4267: '=': conversion from 'size_t' to 'long', possible loss of data
+C:\projects\second wind\src\PositionHandler.cpp(120,29): warning C4018: '>=': signed/unsigned mismatch
+C:\projects\second wind\src\PositionHandler.cpp(142,29): warning C4018: '<=': signed/unsigned mismatch
+C:\projects\second wind\src\PositionHandler.cpp(157,67): warning C4267: '=': conversion from 'size_t' to 'long', possible loss of data
+C:\projects\second wind\src\PositionHandler.cpp(162,29): warning C4018: '>=': signed/unsigned mismatch
+C:\projects\second wind\src\PositionHandler.cpp(194,53): warning C4267: '=': conversion from 'size_t' to 'unsigned long', possible loss of data
+C:\projects\second wind\src\PositionHandler.cpp(210,53): warning C4267: '=': conversion from 'size_t' to 'unsigned long', possible loss of data
+  test.vcxproj -> C:\projects\second wind\test\bin\test.exe
