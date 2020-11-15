@@ -2,8 +2,8 @@
 
 #include <filesystem>
 #include <string>
-#include <iostream>
 #include "glad/glad.h"
+#include "SDL2/SDL.h"
 
 
 namespace utility {
@@ -13,3 +13,14 @@ namespace utility {
     GLenum glCheckError_(const char* file, int line);
 
 }
+
+class Timer {
+    Uint64 startTime;
+    Uint64 perfFreq;
+    float lastTime;
+public:
+    Timer();
+    void start();           // starts timer
+    float elapsedMs();      // time since timer started
+    float lastFrameTime();  // returns the time last frame took (used for simulation)
+};

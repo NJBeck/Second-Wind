@@ -6,8 +6,8 @@
 #include "glad/glad.h"
 
 #include "RENDER2D.h"
-
-using std::string;
+#include "globals.h"
+#include "Character.h"
 
 int main(int argc, char* args[]) {
 
@@ -21,34 +21,27 @@ int main(int argc, char* args[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-    // create camera, entity component managers and renderer
+    // create camera, window and renderer
     SDL_Window* window = NULL;
     OrthoCam camera{100.0, 100.0, 16.0, 9.0, 1280, 720};
-    ImageHandler imageHandler;
-    QuadHandler quadHandler(&imageHandler);
-    PositionHandler posHandler;
-    RENDER2D renderer(window, camera, &quadHandler, &posHandler);
+    RENDER2D renderer(window, camera);
 
     // create character with this quad
-    QuadParams quad{ string("png/wulax/walkcycle/BODY_male.png"), Shader("quadshader.vs", "quadshader.fs"),
+    QuadParams quad{ std::string("png/wulax/walkcycle/BODY_skeleton.png"), Shader("quadshader.vs", "quadshader.fs"),
                     0.4, 0.4, 1, 4, 1, 9 };
-    CharacterHandlers charHandlers { &posHandler, &quadHandler };
-    Character player(quad, 100.1, 100.1, charHandlers);
+    Character player(quad, 100.1, 100.1);
 
-    while (true) {
+    while (renderer.alive) {
+        globals::globalTimer.start();
 
-        auto startTime = SDL_GetPerformanceCounter();
-        auto perfFreq = SDL_GetPerformanceFrequency();
+        globals::eventManager.PollEvents();
+        globals::eventManager.DispatchEvents();
 
         renderer.DrawScene();
 
-        float elapsedMS = ((float)(SDL_GetPerformanceCounter() - startTime)) / (float)perfFreq * 1000;
-
-
-        SDL_Delay(std::max((16.666 - elapsedMS), 0.0));
-    }
+        SDL_Delay(std::max((16.666 - globals::globalTimer.elapsedMs()), 0.0));
+ }
 	
-
 	SDL_Quit();
 
 	return 0;

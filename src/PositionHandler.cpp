@@ -96,11 +96,13 @@ void PositionHandler::ChangePos(unsigned long handle, Pos vec)
     // then adding them to the appropriate entities in Index hash map all at once
     // sorting could also be deferred
 
-    auto Xindex = Index[handle].yIndex;
+    auto Xindex = Index[handle].xIndex;
     auto Yindex = Index[handle].yIndex;
     auto newXPos = xPositions[Xindex].Pos + vec.xPos;
     auto newYPos = yPositions[Yindex].Pos + vec.yPos;
-
+    xPositions[Xindex].Pos = newXPos;
+    yPositions[Yindex].Pos = newYPos;
+    // std::cout << "moving entity: " << handle << " to " << newXPos << ", " << newYPos << endl;
 
     if (vec.xPos != 0) {
         if (newXPos < xPositions[Xindex].Pos) {
@@ -111,14 +113,14 @@ void PositionHandler::ChangePos(unsigned long handle, Pos vec)
 
             // nextIndex is index of element to the left which we will be swapping with
             // eg: newIndex, ... , nextIndex, Xindex, ... 
-            auto nextIndex = Xindex - 1;
+            long nextIndex = Xindex - 1;
             // keep swapping until element is in its proper place
             while (newIndex <= nextIndex) {
                 // index for elements being swapped back in vector
                 // should be incremented in the hashmap and vice versa
                 // for the one being swapped forward
-                ++Index[xPositions[nextIndex].ID].yIndex;
-                --Index[xPositions[Xindex].ID].yIndex;
+                ++Index[xPositions[nextIndex].ID].xIndex;
+                --Index[xPositions[Xindex].ID].xIndex;
                 swap(xPositions[nextIndex], xPositions[Xindex]);
 
                 --Xindex;
@@ -131,11 +133,11 @@ void PositionHandler::ChangePos(unsigned long handle, Pos vec)
             if (newIndex == -1) { newIndex = xPositions.size() - 1; }
 
             // nextIndex is index of element to the right which we will be swapping with
-            auto nextIndex = Xindex + 1;
+            long nextIndex = Xindex + 1;
             // keep swapping until element is in its new place
             while (newIndex >= nextIndex) {
-                --Index[xPositions[nextIndex].ID].yIndex;
-                ++Index[xPositions[Xindex].ID].yIndex;
+                --Index[xPositions[nextIndex].ID].xIndex;
+                ++Index[xPositions[Xindex].ID].xIndex;
                 swap(xPositions[nextIndex], xPositions[Xindex]);
 
                 ++Xindex;
@@ -153,7 +155,7 @@ void PositionHandler::ChangePos(unsigned long handle, Pos vec)
 
             // nextIndex is index of element to the left which we will be swapping with
             // eg: newIndex, ... , nextIndex, Xindex, ... 
-            auto nextIndex = Yindex - 1;
+            long nextIndex = Yindex - 1;
             // keep swapping until element is in its proper place
             while (newIndex <= nextIndex) {
                 // index for elements being swapped back in vector

@@ -2,10 +2,7 @@
 #include "SDL2/SDL.h"
 #include "glad/glad.h"
 
-#include "QuadHandler.h"
-#include "ImageHandler.h"
-#include "Character.h"
-#include "PositionHandler.h"
+#include "entity.h"
 
 #define LATEST_SDL_ERROR std::cout << "SDL failure:" << SDL_GetError() << std::endl;
 
@@ -18,16 +15,16 @@ struct OrthoCam {
 	int w_height;
 };
 
-class RENDER2D
+class RENDER2D final: public entity
 {
 	OrthoCam cam;
 	SDL_Window* window;
-	QuadHandler* qHandler;
-	PositionHandler* posHandler;
 public:
-	RENDER2D(SDL_Window*, OrthoCam, QuadHandler*, PositionHandler*);
+	RENDER2D(SDL_Window*, OrthoCam);
 	void DrawScene();
 	~RENDER2D();
 
+	void OnNotify(std::vector<SDL_Event*>) override;
+	bool alive;
 };
 

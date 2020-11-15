@@ -91,6 +91,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Character.h" />
+    <ClInclude Include="src\EventManager.h" />
+    <ClInclude Include="src\globals.h" />
     <ClInclude Include="src\ImageHandler.h" />
     <ClInclude Include="src\PositionHandler.h" />
     <ClInclude Include="src\QuadHandler.h" />
@@ -101,6 +103,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Character.cpp" />
+    <ClCompile Include="src\EventManager.cpp" />
+    <ClCompile Include="src\globals.cpp" />
     <ClCompile Include="src\ImageHandler.cpp" />
     <ClCompile Include="src\PositionHandler.cpp" />
     <ClCompile Include="src\QuadHandler.cpp" />

@@ -1,7 +1,15 @@
 #include "entity.h"
 
-unsigned long entity::handle = 0;
+unsigned long entity::count = 0;
 
 entity::entity() {
-	++handle;
+	++count;
+	handle = count;
+}
+
+void entity::OnNotify(std::vector<SDL_Event*>){}
+
+bool entity::operator==(const entity& e) const
+{
+	return (e.handle == handle);
 }
