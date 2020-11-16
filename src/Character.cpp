@@ -1,8 +1,6 @@
 #include "Character.h"
 #include "globals.h"
 
-#include <cmath>
-
 Character::Character(QuadParams quad, double xPos, double yPos)
 {
 	// add the position and quad components
@@ -12,38 +10,66 @@ Character::Character(QuadParams quad, double xPos, double yPos)
 	globals::eventManager.add(this, events::KD_A);
 	globals::eventManager.add(this, events::KD_S);
 	globals::eventManager.add(this, events::KD_D);
-
-}
-
-void Character::move(double x, double y) {
-	globals::posHandler.ChangePos(handle, { x, y });
+	globals::movementHandler.add(handle, 1.0);
 }
 
 void Character::OnNotify(std::vector<SDL_Event*> evts)
 {
-	
-	Pos newPosVec = { 0.0, 0.0 };
+	int inputXDir = 0;
+	int inputYDir = 0;
 	for (SDL_Event* evt : evts) {
 		events myevent = globals::eventManager.SDLtoEvent(*evt);
 		switch (myevent) {
-			case events::KD_W: newPosVec.yPos += 1.0;
-				break;
-			case events::KD_A: newPosVec.xPos += -1.0;
-				break;
-			case events::KD_S: newPosVec.yPos += -1.0;
-				break;
-			case events::KD_D: newPosVec.xPos += 1.0;
-				break;
+		case events::KD_W: {
+			inputYDir += 1;
+			globals::eventManager.remove(this, events::KD_W);
+			globals::eventManager.add(this, events::KU_W);
+		}
+			break;
+		case events::KD_A: {
+			inputXDir += -1;
+			globals::eventManager.remove(this, events::KD_A);
+			globals::eventManager.add(this, events::KU_A);
+		}
+			break;
+		case events::KD_S: {
+			inputYDir += -1;
+			globals::eventManager.remove(this, events::KD_S);
+			globals::eventManager.add(this, events::KU_S);
+		}
+			break;
+		case events::KD_D: {
+			inputXDir += 1;
+			globals::eventManager.remove(this, events::KD_D);
+			globals::eventManager.add(this, events::KU_D);
+		}
+			break;
+		case events::KU_W: {
+			inputYDir += -1;
+			globals::eventManager.remove(this, events::KU_W);
+			globals::eventManager.add(this, events::KD_W);
+		}
+			break;
+		case events::KU_A: {
+			inputXDir += 1;
+			globals::eventManager.remove(this, events::KU_A);
+			globals::eventManager.add(this, events::KD_A);
+		}
+						 break;
+		case events::KU_S: {
+			inputYDir += 1;
+			globals::eventManager.remove(this, events::KU_S);
+			globals::eventManager.add(this, events::KD_S);
+		}
+						 break;
+		case events::KU_D: {
+			inputXDir += -1;
+			globals::eventManager.remove(this, events::KU_D);
+			globals::eventManager.add(this, events::KD_D);
+		}
+						 break;
 		}
 	}
-	if (newPosVec.xPos != 0.0 || newPosVec.yPos != 0.0) {
-		double characterSpeed = 1.0;
-		double distance = characterSpeed * globals::globalTimer.lastFrameTime() / 1000.0;
-		double normalizer = 1 / std::sqrt(std::abs(newPosVec.xPos) + std::abs(newPosVec.yPos));
-		newPosVec.xPos = newPosVec.xPos * normalizer;
-		newPosVec.yPos = newPosVec.yPos * normalizer;
-		move(newPosVec.xPos * distance, newPosVec.yPos * distance);
-	}
-	
+	globals::movementHandler.addVelocity(handle, (double)inputXDir, (double)inputYDir);
 
 }

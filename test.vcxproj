@@ -87,22 +87,28 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Character.h" />
+    <ClInclude Include="src\EventManager.h" />
     <ClInclude Include="src\ImageHandler.h" />
+    <ClInclude Include="src\MovementHandler.h" />
     <ClInclude Include="src\PositionHandler.h" />
     <ClInclude Include="src\QuadHandler.h" />
     <ClInclude Include="src\RENDER2D.h" />
     <ClInclude Include="src\entity.h" />
+    <ClInclude Include="src\globals.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\utility.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Character.cpp" />
+    <ClCompile Include="src\EventManager.cpp" />
     <ClCompile Include="src\ImageHandler.cpp" />
+    <ClCompile Include="src\MovementHandler.cpp" />
     <ClCompile Include="src\PositionHandler.cpp" />
     <ClCompile Include="src\QuadHandler.cpp" />
     <ClCompile Include="src\RENDER2D.cpp" />
     <ClCompile Include="src\entity.cpp" />
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\globals.cpp" />
     <ClCompile Include="src\utility.cpp" />
     <ClCompile Include="test\test.cpp" />
   </ItemGroup>

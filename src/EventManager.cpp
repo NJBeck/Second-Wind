@@ -8,6 +8,7 @@ void EventManager::add(entity* e, events evt)
 
 void EventManager::remove(entity* e, events evt)
 {
+	eventMap[evt].erase(e);
 }
 
 
@@ -22,6 +23,7 @@ void EventManager::PollEvents()
 		for (entity* ent : eventMap[myEvent]) {
 			notifications[ent].push_back(&eventQueue.back());
 		}
+
 	}
 }
 
@@ -38,21 +40,33 @@ events EventManager::SDLtoEvent(SDL_Event sdlevt) {
 		case SDL_KEYDOWN: {
 			switch (sdlevt.key.keysym.sym) {
 				case SDLK_w: return events::KD_W;
-						break;
+		
 				case SDLK_a: return events::KD_A;
-						break;
+		
 				case SDLK_s: return events::KD_S;
-						break;
+		
 				case SDLK_d: return events::KD_D;
-					break;
+	
 				case SDLK_ESCAPE: return events::KD_ESC;
-					break;
+			}
+			break;
+		}
+		case SDL_KEYUP: {
+			switch (sdlevt.key.keysym.sym) {
+			case SDLK_w: return events::KU_W;
+
+			case SDLK_a: return events::KU_A;
+
+			case SDLK_s: return events::KU_S;
+
+			case SDLK_d: return events::KU_D;
+
+			case SDLK_ESCAPE: return events::KU_ESC;
 			}
 			break;
 		}
 		case SDL_MOUSEMOTION: return events::MM;
-			break;
+
 		case SDL_MOUSEBUTTONDOWN: return events::MBD;
-			break;
 	}
 }

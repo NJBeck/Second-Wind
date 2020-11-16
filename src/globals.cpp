@@ -5,6 +5,7 @@ namespace globals {
 	ImageHandler imgHandler;
 	QuadHandler quadHandler(&imgHandler);
 	EventManager eventManager;
+	MovementHandler movementHandler;
 	Timer globalTimer;
 
 }

@@ -77,10 +77,10 @@ class EventManager {
 	// the events get dispatched from a queue
 	std::vector<SDL_Event> eventQueue;
 public:
-	void PollEvents();
-	// dispatches the events to the entities subscribed
-	void DispatchEvents();
+	void PollEvents();				// makes the vector of events eventQueue
+	void DispatchEvents();			// gives each entity their notifications
 	void add(entity*, events);		// subscribe entity to event
-	void remove(entity*, events);
-	events SDLtoEvent(SDL_Event);
+	void remove(entity*, events);	// unsubscribe entity
+	events SDLtoEvent(SDL_Event);	// translates SDL_Event to my event
+
 };

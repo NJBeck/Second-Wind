@@ -92,7 +92,7 @@ void PositionHandler::ChangePos(unsigned long handle, Pos vec)
 {
     // swaps the handle to the new appropriate position in xPositions and yPositions and updates Index
 
-    // could be made more efficient by saving the changes of indices for the positionss
+    // could be made more efficient by saving the changes of indices for the positions
     // then adding them to the appropriate entities in Index hash map all at once
     // sorting could also be deferred
 
@@ -102,7 +102,7 @@ void PositionHandler::ChangePos(unsigned long handle, Pos vec)
     auto newYPos = yPositions[Yindex].Pos + vec.yPos;
     xPositions[Xindex].Pos = newXPos;
     yPositions[Yindex].Pos = newYPos;
-    // std::cout << "moving entity: " << handle << " to " << newXPos << ", " << newYPos << endl;
+    //std::cout << "moving entity: " << handle << " to " << newXPos << ", " << newYPos << endl;
 
     if (vec.xPos != 0) {
         if (newXPos < xPositions[Xindex].Pos) {

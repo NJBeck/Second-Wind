@@ -14,9 +14,6 @@ public:
 		// width and height are how much screen real estate the quad takes
 	Character(QuadParams, double xPos, double yPos);
 
-	// the amount in the x and y (horizontal and vertical respectively) directions to move the entity
-	void move(double x, double y);
-
-	// save events received into a set then evaluate 
+	// WASD keydown/keyup toggle whether or not we move in x,y directions by character speed
 	void OnNotify(std::vector<SDL_Event*>) override;
 };

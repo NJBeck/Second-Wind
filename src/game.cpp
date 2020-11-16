@@ -28,14 +28,15 @@ int main(int argc, char* args[]) {
 
     // create character with this quad
     QuadParams quad{ std::string("png/wulax/walkcycle/BODY_skeleton.png"), Shader("quadshader.vs", "quadshader.fs"),
-                    0.4, 0.4, 1, 4, 1, 9 };
-    Character player(quad, 100.1, 100.1);
+                    (2 / camera.width), (2 / camera.height), 1, 4, 1, 9 };
+    Character player(quad, 100.0, 100.0);
 
     while (renderer.alive) {
         globals::globalTimer.start();
 
         globals::eventManager.PollEvents();
         globals::eventManager.DispatchEvents();
+        globals::movementHandler.update();
 
         renderer.DrawScene();
 
