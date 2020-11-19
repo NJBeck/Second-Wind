@@ -11,7 +11,7 @@
 *.gch
 *.pch
 
-/build
+build/
 premake5.exe
 /.vs
 /.vscode
@@ -21,3 +21,7 @@ premake5.exe
 
 *.filters
 *.user
+/VTune Profiler Results
+/GPUCache
+*.log
+

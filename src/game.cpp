@@ -1,9 +1,7 @@
-// TODO:    add event handler, movement/transform components
-//          possibly make single component handler that has all the information
-//              for which handlers an entity has so the entity only knows about this one handler
 
 #include "SDL2/SDL.h"
 #include "glad/glad.h"
+#include <string>
 
 #include "RENDER2D.h"
 #include "globals.h"

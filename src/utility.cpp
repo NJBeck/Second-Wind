@@ -16,7 +16,7 @@ namespace utility {
         // go up the path until we find "second wind"
         auto currentDir = currentPath.end();
         --currentDir;
-        while (*currentDir != "second wind") {
+        while (*currentDir != "Second-Wind") {
             --currentDir;
         }
         ++currentDir;
