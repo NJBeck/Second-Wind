@@ -65,7 +65,8 @@ enum class events {
 	KU_X,
 	KU_Y,
 	KU_Z,
-	KU_ESC
+	KU_ESC,
+	QUIT
 };
 
 class EventManager {

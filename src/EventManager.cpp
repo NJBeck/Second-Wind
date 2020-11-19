@@ -68,5 +68,7 @@ events EventManager::SDLtoEvent(SDL_Event sdlevt) {
 		case SDL_MOUSEMOTION: return events::MM;
 
 		case SDL_MOUSEBUTTONDOWN: return events::MBD;
+
+		case SDL_QUIT: return events::QUIT;
 	}
 }

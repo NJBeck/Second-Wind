@@ -25,8 +25,11 @@ RENDER2D::RENDER2D(SDL_Window* wind, OrthoCam ocam)
     if (!gladLoadGL()) {
         std::cout << "Failed to initialize GLAD" << std::endl;
     }
+    SDL_GL_SetSwapInterval(1);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
     globals::eventManager.add(this, events::KD_ESC);
+    globals::eventManager.add(this, events::QUIT);
 }
 
 void RENDER2D::DrawScene()
@@ -90,6 +93,7 @@ void RENDER2D::OnNotify(vector<SDL_Event*> evts) {
                     case SDLK_ESCAPE: alive = false;
                         break;
                 }
+            case SDL_QUIT: alive = false;
         }
     }
 }

@@ -1,7 +1,6 @@
 
 #include "SDL2/SDL.h"
 #include "glad/glad.h"
-#include <string>
 
 #include "RENDER2D.h"
 #include "globals.h"
@@ -38,7 +37,6 @@ int main(int argc, char* args[]) {
 
         renderer.DrawScene();
 
-        SDL_Delay(std::max((16.666 - globals::globalTimer.elapsedMs()), 0.0));
  }
 	
 	SDL_Quit();
