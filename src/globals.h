@@ -1,9 +1,9 @@
 #pragma once
-#include "PositionHandler.h"
-#include "QuadHandler.h"
-#include "ImageHandler.h"
-#include "MovementHandler.h"
-#include "EventManager.h"
+#include "handlers/PositionHandler.h"
+#include "handlers/QuadHandler.h"
+#include "handlers/ImageHandler.h"
+#include "handlers/MovementHandler.h"
+#include "handlers/EventManager.h"
 #include "utility.h"
 
 namespace globals {

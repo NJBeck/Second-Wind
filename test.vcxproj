@@ -19,13 +19,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
+    <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
+    <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
@@ -57,58 +57,82 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>include;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;src;test\gtest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>lib\SDL2;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;gtest.lib;gtest_main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib\SDL2;lib\gtest;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>include;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;src;test\gtest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>lib\SDL2;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;gtest.lib;gtest_main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib\SDL2;lib\gtest;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Character.h" />
-    <ClInclude Include="src\EventManager.h" />
-    <ClInclude Include="src\ImageHandler.h" />
-    <ClInclude Include="src\MovementHandler.h" />
-    <ClInclude Include="src\PositionHandler.h" />
-    <ClInclude Include="src\QuadHandler.h" />
-    <ClInclude Include="src\RENDER2D.h" />
-    <ClInclude Include="src\entity.h" />
+    <ClInclude Include="src\entities\Character.h" />
+    <ClInclude Include="src\entities\entity.h" />
     <ClInclude Include="src\globals.h" />
-    <ClInclude Include="src\shader.h" />
+    <ClInclude Include="src\handlers\EventManager.h" />
+    <ClInclude Include="src\handlers\ImageHandler.h" />
+    <ClInclude Include="src\handlers\MovementHandler.h" />
+    <ClInclude Include="src\handlers\PositionHandler.h" />
+    <ClInclude Include="src\handlers\QuadHandler.h" />
+    <ClInclude Include="src\rendering\RENDER2D.h" />
+    <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\utility.h" />
+    <ClInclude Include="test\gtest\gtest-death-test.h" />
+    <ClInclude Include="test\gtest\gtest-matchers.h" />
+    <ClInclude Include="test\gtest\gtest-message.h" />
+    <ClInclude Include="test\gtest\gtest-param-test.h" />
+    <ClInclude Include="test\gtest\gtest-printers.h" />
+    <ClInclude Include="test\gtest\gtest-spi.h" />
+    <ClInclude Include="test\gtest\gtest-test-part.h" />
+    <ClInclude Include="test\gtest\gtest-typed-test.h" />
+    <ClInclude Include="test\gtest\gtest.h" />
+    <ClInclude Include="test\gtest\gtest_pred_impl.h" />
+    <ClInclude Include="test\gtest\gtest_prod.h" />
+    <ClInclude Include="test\gtest\internal\custom\gtest-port.h" />
+    <ClInclude Include="test\gtest\internal\custom\gtest-printers.h" />
+    <ClInclude Include="test\gtest\internal\custom\gtest.h" />
+    <ClInclude Include="test\gtest\internal\gtest-death-test-internal.h" />
+    <ClInclude Include="test\gtest\internal\gtest-filepath.h" />
+    <ClInclude Include="test\gtest\internal\gtest-internal.h" />
+    <ClInclude Include="test\gtest\internal\gtest-param-util.h" />
+    <ClInclude Include="test\gtest\internal\gtest-port-arch.h" />
+    <ClInclude Include="test\gtest\internal\gtest-port.h" />
+    <ClInclude Include="test\gtest\internal\gtest-string.h" />
+    <ClInclude Include="test\gtest\internal\gtest-type-util.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Character.cpp" />
-    <ClCompile Include="src\EventManager.cpp" />
-    <ClCompile Include="src\ImageHandler.cpp" />
-    <ClCompile Include="src\MovementHandler.cpp" />
-    <ClCompile Include="src\PositionHandler.cpp" />
-    <ClCompile Include="src\QuadHandler.cpp" />
-    <ClCompile Include="src\RENDER2D.cpp" />
-    <ClCompile Include="src\entity.cpp" />
-    <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\entities\Character.cpp" />
+    <ClCompile Include="src\entities\entity.cpp" />
+    <ClCompile Include="src\glad\glad.c" />
     <ClCompile Include="src\globals.cpp" />
+    <ClCompile Include="src\handlers\EventManager.cpp" />
+    <ClCompile Include="src\handlers\ImageHandler.cpp" />
+    <ClCompile Include="src\handlers\MovementHandler.cpp" />
+    <ClCompile Include="src\handlers\PositionHandler.cpp" />
+    <ClCompile Include="src\handlers\QuadHandler.cpp" />
+    <ClCompile Include="src\rendering\RENDER2D.cpp" />
     <ClCompile Include="src\utility.cpp" />
     <ClCompile Include="test\test.cpp" />
   </ItemGroup>

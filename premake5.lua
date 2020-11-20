@@ -6,6 +6,7 @@ workspace "Second Wind"
         "release"
     }
 
+
 outputdir = "%{cfg.buildcfg}"
 
 project "Second Wind"
@@ -23,7 +24,8 @@ project "Second Wind"
     }
 
     includedirs {
-        "include/"
+        "include/",
+        "src/"
     }
 
     libdirs{
@@ -35,11 +37,15 @@ project "Second Wind"
         "SDL2main"
     }
     filter "configurations:debug"
+        defines "_DEBUG"
         symbols "On"
         optimize "Debug"
 
     filter "configurations:release"
+        defines "NDEBUG"
         optimize "On"
+
+    filter {}
 
 project "test"
     kind "ConsoleApp"
@@ -62,17 +68,24 @@ project "test"
 
     includedirs {
         "include/",
-        "src/"
+        "src/",
+        "test/gtest/"
     }
 
     libdirs{
-        "lib/SDL2/"
+        "lib/SDL2/",
+        "lib/gtest/"
     }
 
     links{
         "SDL2",
-        "SDL2main"
+        "SDL2main",
+        "gtest",
+        "gtest_main"
     }
+
+    runtime "Release"
+
 
     symbols "On"
     optimize "Debug"

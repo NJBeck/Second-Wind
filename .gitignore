@@ -25,3 +25,4 @@ premake5.exe
 /GPUCache
 *.log
 
+/test/bin

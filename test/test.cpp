@@ -1,42 +1,51 @@
-// TODO: actually do assertions rather than printing and inspecting
-#include <iostream>
-#include "SDL2/SDL.h"
+
 #include <vector>
+#include <random>
+#include <algorithm>
 
-#include "utility.h"
-#include "PositionHandler.h"
+#include "gtest/gtest.h"
 
-using namespace std;
+#include "globals.h"
 
-void PositionTest() {
-	struct TestEntity {
-		unsigned long ID;
-		double xPos;
-		double yPos;
-	};
-	vector<TestEntity> vec{ {1, .2, .3}, { 2,.3,.4 }, { 0,.1,.4 }, { 4,0.0,.7 }};
-	PositionHandler ph;
-	for (auto& ent : vec) {
-		ph.add(ent.ID, { ent.xPos,ent.yPos });
-	}
-	for (auto& entry : ph.Index) {
-		cout << "ID: " << entry.first << " Indices: " << entry.second.xIndex << " " << entry.second.yIndex << endl;
-	}
-	cout << "xPositions ";
-	for (auto& xpos : ph.xPositions) {
-		cout << xpos.Pos << " ";
-	}
-	cout << endl;
+using std::vector, std::uniform_real_distribution, std::uniform_int_distribution, std::default_random_engine, std::is_sorted;
 
-	cout << "yPositions ";
-	for (auto& ypos : ph.yPositions) {
-		cout << ypos.Pos << " ";
-	}
-	cout << endl;
+namespace {
+
+    class PosTest : public ::testing::Test {
+        // generate num randomly distributed entities with positions
+        // test that they are properly sorted
+    protected:
+        PosTest() {
+
+            uniform_real_distribution<double> unifDouble(lower, upper);
+            default_random_engine re;
+
+            for (unsigned i = 0; i < num; ++i) {
+                entity ent;
+                Pos entPos = { unifDouble(re), unifDouble(re) };
+
+                globals::posHandler.add(ent.handle, entPos);
+            }
+        }
+    public:
+        unsigned int num = 10000;
+        double lower = -10000.0;
+        double upper = 10000.0;
+    };
+
+    TEST_F(PosTest, sorted) {
+        vector<unsigned long> sortedEntities = globals::posHandler.EntitiesInRanges(lower, upper, lower, upper);
+        vector<Pos> sortedPos;
+        sortedPos.reserve(num);
+        for (auto& ent : sortedEntities) {
+            sortedPos.push_back(globals::posHandler.GetPos(ent));
+        }
+        EXPECT_TRUE(is_sorted(sortedPos.begin(), sortedPos.end(), [](Pos const& lhs, Pos const& rhs) { return lhs.yPos > rhs.yPos; }));
+    }
+
 }
 
-int main(int argc, char* args[]) {
-	PositionTest();
-	cin.get();
-	return 0;
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
