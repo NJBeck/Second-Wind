@@ -44,41 +44,45 @@ void RENDER2D::DrawScene()
     for (auto& ent : entitiesInRange) {
         if (globals::quadHandler.HasQuad(ent)) {
             // retrieve data for quad
-            GLQuadData quad = globals::quadHandler.GetData(ent);
+            vector<GLQuadData> quads = globals::quadHandler.GetData(ent);
+
             // figure out where on the screen the quad should go
             Pos quadPos = globals::posHandler.GetPos(ent);
             float screenX = 2 * (quadPos.xPos - cam.left) / cam.width - 1;
             float screenY = 2 * (quadPos.yPos - cam.bottom) / cam.height - 1;
 
-            // specify texture unit
-            glActiveTexture(GL_TEXTURE0);
-            glCheckError();
+            for (auto& _quad : quads) {
 
-            // bind the quad's texture
-            glBindTexture(GL_TEXTURE_2D, quad.texture);
-            glCheckError();
+                // specify texture unit
+                glActiveTexture(GL_TEXTURE0);
+                glCheckError();
 
-            // use its shader program
-            quad.shaders.use();
-            glCheckError();
+                // bind the quad's texture
+                glBindTexture(GL_TEXTURE_2D, _quad.texture);
+                glCheckError();
 
-            quad.shaders.setVec2("screenPos", screenX, screenY);
+                // use its shader program
+                _quad.shaders.use();
+                glCheckError();
 
-            // specify the texture unit for the uniform
-            quad.shaders.setInt("texture1", 0);
-            glCheckError();
+                _quad.shaders.setVec2("screenPos", screenX, screenY);
 
-            // bind the quad's VAO
-            glBindVertexArray(quad.VAO);
-            glCheckError();
+                // specify the texture unit for the uniform
+                _quad.shaders.setInt("texture1", 0);
+                glCheckError();
 
-            // enable blending for the alpha
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glCheckError();
+                // bind the quad's VAO
+                glBindVertexArray(_quad.VAO);
+                glCheckError();
 
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-            glCheckError();
+                // enable blending for the alpha
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glCheckError();
+
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                glCheckError();
+            }
         }
     }
     SDL_GL_SwapWindow(window);

@@ -12,7 +12,7 @@ public:
 		// rows, columns (of image if spritesheet), row, column of image in sheet)
 		// path for image and shader files should be relative to /data/ folder
 		// width and height are how much screen real estate the quad takes
-	Character(QuadParams, double xPos, double yPos);
+	Character(std::vector<QuadParams>, double xPos, double yPos);
 
 	// WASD keydown/keyup toggle whether or not we move in x,y directions by character speed
 	void OnNotify(std::vector<SDL_Event*>) override;

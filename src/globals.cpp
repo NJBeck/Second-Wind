@@ -3,7 +3,7 @@
 namespace globals {
 	PositionHandler posHandler;
 	ImageHandler imgHandler;
-	QuadHandler quadHandler(&imgHandler);
+	QuadHandler quadHandler;
 	EventManager eventManager;
 	MovementHandler movementHandler;
 	Timer globalTimer;

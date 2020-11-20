@@ -6,6 +6,8 @@
 #include "globals.h"
 #include "Character.h"
 
+using std::string, std::vector;
+
 int main(int argc, char* args[]) {
 
 
@@ -23,10 +25,13 @@ int main(int argc, char* args[]) {
     OrthoCam camera{100.0, 100.0, 16.0, 9.0, 1280, 720};
     RENDER2D renderer(window, camera);
 
-    // create character with this quad
-    QuadParams quad{ std::string("png/wulax/walkcycle/BODY_skeleton.png"), Shader("quadshader.vs", "quadshader.fs"),
+    // create character with these quads
+    Shader quadshader("quadshader.vs", "quadshader.fs");
+    QuadParams skeleton{string("png/wulax/walkcycle/BODY_skeleton.png"), quadshader,
                     (2 / camera.width), (2 / camera.height), 1, 4, 1, 9 };
-    Character player(quad, 100.0, 100.0);
+    QuadParams chainmail{string("png/wulax/walkcycle/TORSO_chain_armor_torso.png"), quadshader, 
+                    (2 / camera.width), (2 / camera.height), 1, 4, 1, 9 };
+    Character player({ skeleton, chainmail }, 100.0, 100.0);
 
     while (renderer.alive) {
         globals::globalTimer.start();

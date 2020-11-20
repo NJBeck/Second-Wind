@@ -1,6 +1,7 @@
 #pragma once
 #include "PositionHandler.h"
 #include "QuadHandler.h"
+#include "ImageHandler.h"
 #include "MovementHandler.h"
 #include "EventManager.h"
 #include "utility.h"

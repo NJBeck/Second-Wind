@@ -1,9 +1,11 @@
 #include "Character.h"
 #include "globals.h"
 
-Character::Character(QuadParams quad, double xPos, double yPos)
+using std::vector;
+
+Character::Character(vector<QuadParams> quad, double xPos, double yPos)
 {
-	// add the position and quad components
+	// add components
 	globals::quadHandler.add(handle, quad);
 	globals::posHandler.add(handle, { xPos, yPos });
 	globals::eventManager.add(this, events::KD_W);
