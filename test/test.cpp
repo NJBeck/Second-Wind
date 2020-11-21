@@ -16,18 +16,19 @@ namespace {
         // test that they are properly sorted
     protected:
         PosTest() {
-
+            _entities.reserve(num);
+            for (unsigned i = 0; i < num; ++i) { _entities.emplace_back(entity()); }
             uniform_real_distribution<double> unifDouble(lower, upper);
             default_random_engine re;
 
-            for (unsigned i = 0; i < num; ++i) {
-                entity ent;
+            for (auto& ent: _entities) {
                 Pos entPos = { unifDouble(re), unifDouble(re) };
 
                 globals::posHandler.add(ent.handle, entPos);
             }
         }
     public:
+        vector<entity> _entities;
         unsigned int num = 10000;
         double lower = -10000.0;
         double upper = 10000.0;

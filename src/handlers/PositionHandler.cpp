@@ -191,6 +191,9 @@ void PositionHandler::ChangePos(unsigned long handle, Pos vec)
 
 void PositionHandler::add(unsigned long handle, Pos posn)
 {
+    if (xPositions.size() == 38) {
+        std::cout << "here" << std::endl;
+    }
     // find iterators to point to insert the new values
     auto Xindex = FirstPos(posn.xPos, xPositions);
     auto Yindex = FirstPos(posn.yPos, yPositions);
@@ -201,11 +204,10 @@ void PositionHandler::add(unsigned long handle, Pos posn)
         // update index in Index and insert into position vector
         Index[handle].xIndex = Xindex;
         vector<EntityPos>::iterator it = xPositions.begin() + Xindex;
-        it = xPositions.insert(it, { handle, posn.xPos });
+        xPositions.insert(it, { handle, posn.xPos });
         // now we have to tell Index to increment all the indices of the following entities after insertion
-        it = xPositions.begin() + Xindex; // redefine it incase the vector was reallocated
-        for (it = it + 1;  it != xPositions.end(); ++it) {
-            ++Index[it->ID].xIndex;
+        for (unsigned i = Xindex + 1; i < xPositions.size(); ++i) {
+            ++Index[xPositions[i].ID].xIndex;
         }
     }
     // if Xindex was -1 then xPos was bigger than any in the list
@@ -219,11 +221,10 @@ void PositionHandler::add(unsigned long handle, Pos posn)
     if (Yindex != -1) {
         Index[handle].yIndex = Yindex;
         vector<EntityPos>::iterator it = yPositions.begin() + Yindex;
-        it = yPositions.insert(it, { handle, posn.yPos });
+        yPositions.insert(it, { handle, posn.yPos });
         
-        it = yPositions.begin() + Yindex;
-        for (it = it + 1; it != yPositions.end(); ++it) {
-            ++Index[it->ID].yIndex;
+        for (unsigned i = Yindex + 1; i < yPositions.size(); ++i) {
+            ++Index[yPositions[i].ID].yIndex;
         }
     }
     // if Yindex was -1 then yPos was bigger than any in the list
