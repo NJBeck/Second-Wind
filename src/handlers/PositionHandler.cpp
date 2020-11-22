@@ -1,18 +1,22 @@
 #include "handlers/PositionHandler.h"
 
-#include <algorithm>
-#include <cmath>
+
 #include <iostream>
 
 using namespace std;
 
-std::vector<unsigned long> PositionHandler::EntitiesInRange(double start, double stop, vector<EntityPos> positions)
+std::vector<unsigned long> PositionHandler::_InRange(double start, double stop, direction dir)
 {
     vector<unsigned long> results;
-    auto index = FirstPos(start, positions);
+    auto index = FirstPos(start, dir);
     // if index is -1 then left is larger than any in xPositions
     if (index == -1) { return results; }
 
+    vector<EntityPos>* _positions;
+    if (dir == direction::y) _positions = &yPositions;
+    else _positions = &xPositions;
+
+    auto& positions = *_positions;
     // now iterate through the list until the value is greater than "right"
     while (positions[index].Pos < stop){
         results.push_back(positions[index].ID);
@@ -27,34 +31,38 @@ std::vector<unsigned long> PositionHandler::EntitiesInRange(double start, double
     return results;
 }
 
-vector<unsigned long> PositionHandler::EntitiesInRanges(double left, double right, double bottom, double top) {
+vector<unsigned long> PositionHandler::InRange(double left, double right, double bottom, double top) {
 
-    vector<unsigned long> entitiesInRangeY = EntitiesInRange(bottom, top, yPositions);
+    vector<unsigned long> entitiesInRangeY = _InRange(bottom, top, direction::y);
     vector<unsigned long> result;
     for (auto& ent : entitiesInRangeY) {
-        double entXPos = xPositions[Index[ent].xIndex].Pos;
+        double entXPos = xPositions[_xIndex[ent]].Pos;
         if (entXPos > left && entXPos < right) {
             result.push_back(ent);
         }
     }
     reverse(result.begin(), result.end());
     return result;
-
-
 }
 
 Pos PositionHandler::GetPos(unsigned long handle)
 {
     Pos result;
-    result.xPos = xPositions[Index[handle].yIndex].Pos;
-    result.yPos = yPositions[Index[handle].yIndex].Pos;
+    result.xPos = xPositions[_xIndex[handle]].Pos;
+    result.yPos = yPositions[_yIndex[handle]].Pos;
     return result;
 }
 
-long PositionHandler::FirstPos(double input, vector<EntityPos> vec) {
+long PositionHandler::FirstPos(double input, direction dir) {
+    vector<EntityPos>* _vec;
+    if (dir == direction::y) { _vec = &yPositions; }
+    else { _vec = &xPositions; }
 
-    unsigned long int prev = vec.size();
-    unsigned long int mid = prev / 2;
+    vector<EntityPos>& vec = *_vec;
+
+    unsigned long left = 0;
+    unsigned long right = vec.size() - 1;
+    unsigned long mid = (left + right) / 2;
 
     if (vec.empty()) { return 0; }
 
@@ -65,172 +73,130 @@ long PositionHandler::FirstPos(double input, vector<EntityPos> vec) {
     if (input <= vec[0].Pos) { return 0; }
 
     // we're looking for where the midpoint is larger than input and the previous one is smaller
-    while (!(
-            (vec[mid].Pos >= input) 
-         && (vec[mid - 1].Pos <= input)))
-        // means every loop either mid point is smaller than input
-        // or mid - 1 is larger than input
+    while (!
+            ((vec[mid].Pos >= input)
+         && (vec[mid - 1].Pos <= input))
+          )
     {
-        // store the mid to assign it to prev
-        auto temp = mid;
-        // half of the distance between the last midpoint and the new one (rounded up)
-        unsigned long diff = ceil(abs((long)(mid - prev)) / 2.0);
-
-        if (vec[mid].Pos >= input) {
-            mid = mid - diff;
-            prev = temp;
-        }
-        else {
-            mid = mid + diff;
-            prev = temp;
-        }
+        if (vec[mid].Pos < input) { left = mid + 1; }
+        else { right = mid - 1; }
+        
+        mid = (left + right) / 2;
     }
     return mid;
-}
 
-void PositionHandler::ChangePos(unsigned long handle, Pos vec)
-{
+}
+void PositionHandler::_changepos(unsigned long handle, double posn, direction dir) {
     // swaps the handle to the new appropriate position in xPositions and yPositions and updates Index
 
     // could be made more efficient by saving the changes of indices for the positions
     // then adding them to the appropriate entities in Index hash map all at once
     // sorting could also be deferred
+    long index;                                     // index of pos in vector before transform
+    double newPos;                                  // the sum of posn and the old pos value
 
-    auto Xindex = Index[handle].xIndex;
-    auto Yindex = Index[handle].yIndex;
-    auto newXPos = xPositions[Xindex].Pos + vec.xPos;
-    auto newYPos = yPositions[Yindex].Pos + vec.yPos;
-    xPositions[Xindex].Pos = newXPos;
-    yPositions[Yindex].Pos = newYPos;
-    //std::cout << "moving entity: " << handle << " to " << newXPos << ", " << newYPos << endl;
-
-    if (vec.xPos != 0) {
-        if (newXPos < xPositions[Xindex].Pos) {
-            // binary search for where it now belongs
-            // could be made faster by overloading Pos
-            // to work with iterators just to where the original index was
-            auto newIndex = FirstPos(newXPos, xPositions);
-
-            // nextIndex is index of element to the left which we will be swapping with
-            // eg: newIndex, ... , nextIndex, Xindex, ... 
-            long nextIndex = Xindex - 1;
-            // keep swapping until element is in its proper place
-            while (newIndex <= nextIndex) {
-                // index for elements being swapped back in vector
-                // should be incremented in the hashmap and vice versa
-                // for the one being swapped forward
-                ++Index[xPositions[nextIndex].ID].xIndex;
-                --Index[xPositions[Xindex].ID].xIndex;
-                swap(xPositions[nextIndex], xPositions[Xindex]);
-
-                --Xindex;
-                --nextIndex;
-            }
-        }
-        else {
-            auto newIndex = FirstPos(newXPos, xPositions);
-            // if firstpos returns -1 then newxPos is bigger than any in xPositions
-            if (newIndex == -1) { newIndex = xPositions.size() - 1; }
-
-            // nextIndex is index of element to the right which we will be swapping with
-            long nextIndex = Xindex + 1;
-            // keep swapping until element is in its new place
-            while (newIndex >= nextIndex) {
-                --Index[xPositions[nextIndex].ID].xIndex;
-                ++Index[xPositions[Xindex].ID].xIndex;
-                swap(xPositions[nextIndex], xPositions[Xindex]);
-
-                ++Xindex;
-                ++nextIndex;
-            }
-        }
+    vector<EntityPos>* positions;
+    unordered_map<unsigned long, unsigned long>* indexMap;
+    if (dir == direction::y) {
+        index = _yIndex[handle];
+        newPos = yPositions[index].Pos + posn;
+        positions = &yPositions;
+        indexMap = &_yIndex;
     }
-    // now do same for Y
-    if (vec.yPos != 0) {
-        if (newYPos < yPositions[Yindex].Pos) {
+    else {
+        index = _xIndex[handle];
+        newPos = xPositions[index].Pos + posn;
+        positions = &xPositions;
+        indexMap = &_xIndex;
+    }
+
+    if (posn != 0) {
+        auto newIndex = FirstPos(newPos, dir);
+
+        if (newPos < (*positions)[index].Pos) {
             // binary search for where it now belongs
             // could be made faster by overloading Pos
             // to work with iterators just to where the original index was
-            auto newIndex = FirstPos(newYPos, yPositions);
 
             // nextIndex is index of element to the left which we will be swapping with
             // eg: newIndex, ... , nextIndex, Xindex, ... 
-            long nextIndex = Yindex - 1;
+            long nextIndex = index - 1;
+
             // keep swapping until element is in its proper place
             while (newIndex <= nextIndex) {
+                ++(*indexMap)[(*positions)[nextIndex].ID];
+                --(*indexMap)[(*positions)[index].ID];
+                swap((*positions)[nextIndex], (*positions)[index]);
+
+                --index;
+                --nextIndex;
+            }
+
+        }
+        else {
+            
+            // if firstpos returns -1 then newxPos is bigger than any in xPositions
+            if (newIndex == -1) { newIndex = positions->size() - 1; }
+
+            long nextIndex = index + 1;
+            while (newIndex >= nextIndex) {
                 // index for elements being swapped back in vector
                 // should be incremented in the hashmap and vice versa
                 // for the one being swapped forward
-                ++Index[yPositions[nextIndex].ID].yIndex;
-                --Index[yPositions[Yindex].ID].yIndex;
-                swap(yPositions[nextIndex], yPositions[Yindex]);
+                --(*indexMap)[(*positions)[nextIndex].ID];
+                ++(*indexMap)[(*positions)[index].ID];
+                swap((*positions)[nextIndex], (*positions)[index]);
 
-                --Yindex;
-                --nextIndex;
-            }
-        }
-        else {
-            auto newIndex = FirstPos(newYPos, yPositions);
-            // if firstpos returns -1 then newyPos is bigger than any in yPositions
-            if (newIndex == -1) { newIndex = yPositions.size() - 1; }
-
-            // nextIndex is index of element to the right which we will be swapping with
-            auto nextIndex = Yindex + 1;
-            // keep swapping until element is in its new place
-            while (newIndex >= nextIndex) {
-                --Index[yPositions[nextIndex].ID].yIndex;
-                ++Index[yPositions[Yindex].ID].yIndex;
-                swap(yPositions[nextIndex], yPositions[Yindex]);
-
-                ++Yindex;
+                ++index;
                 ++nextIndex;
             }
         }
     }
 }
 
+void PositionHandler::ChangePos(unsigned long handle, Pos vec)
+{
+    _changepos(handle, vec.xPos, direction::x);
+    _changepos(handle, vec.yPos, direction::y);
+}
+
 void PositionHandler::add(unsigned long handle, Pos posn)
 {
-    if (xPositions.size() == 38) {
-        std::cout << "here" << std::endl;
-    }
-    // find iterators to point to insert the new values
-    auto Xindex = FirstPos(posn.xPos, xPositions);
-    auto Yindex = FirstPos(posn.yPos, yPositions);
-    //std::cout << "inserting " << posn.xPos << " into " << Xindex << endl;
-    //std::cout << "inserting " << posn.yPos << " into " << Yindex << endl;
+    _addpos(handle, posn.xPos, direction::x);
+    _addpos(handle, posn.yPos, direction::y);
+}
 
-    if (Xindex != -1) {
-        // update index in Index and insert into position vector
-        Index[handle].xIndex = Xindex;
-        vector<EntityPos>::iterator it = xPositions.begin() + Xindex;
-        xPositions.insert(it, { handle, posn.xPos });
+void PositionHandler::_addpos(unsigned long handle, double posn, direction dir) {
+    auto _index = FirstPos(posn, dir);
+
+    vector<EntityPos>* positions;
+    unordered_map<unsigned long, unsigned long>* index;
+   
+    if(dir == direction::y) { 
+        positions = &yPositions; 
+        index = &_yIndex;
+    }
+    else {
+        positions = &xPositions;
+        index = &_xIndex;
+    }
+
+    if (_index != -1) {
+
+        vector<EntityPos>::iterator it = positions->begin() + _index;
+        positions->insert(it, { handle, posn });
         // now we have to tell Index to increment all the indices of the following entities after insertion
-        for (unsigned i = Xindex + 1; i < xPositions.size(); ++i) {
-            ++Index[xPositions[i].ID].xIndex;
+        // update index in Index and insert into position vector
+        (*index)[handle] = _index;
+        for (unsigned i = _index + 1; i < positions->size(); ++i) {
+            ++(*index)[(*positions)[i].ID];
         }
+
     }
-    // if Xindex was -1 then xPos was bigger than any in the list
+    // if _index was -1 then posn was bigger than any in the list
     else {
-        xPositions.push_back({ handle, posn.xPos });
-        Index[handle].xIndex = xPositions.size() - 1;
-    }
-    //for (auto& item : Index) {
-    //    std::cout << item.first << " " << item.second.xIndex << endl;
-    //}
-    if (Yindex != -1) {
-        Index[handle].yIndex = Yindex;
-        vector<EntityPos>::iterator it = yPositions.begin() + Yindex;
-        yPositions.insert(it, { handle, posn.yPos });
-        
-        for (unsigned i = Yindex + 1; i < yPositions.size(); ++i) {
-            ++Index[yPositions[i].ID].yIndex;
-        }
-    }
-    // if Yindex was -1 then yPos was bigger than any in the list
-    else {
-        yPositions.push_back({ handle, posn.yPos });
-        Index[handle].yIndex = yPositions.size() - 1;
+        positions->push_back({ handle, posn });
+        (*index)[handle] = positions->size() - 1;
     }
 }
 

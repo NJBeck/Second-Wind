@@ -38,7 +38,7 @@ void RENDER2D::DrawScene()
     glClear(GL_COLOR_BUFFER_BIT);
 
     // get the entities whose position falls inside our camera
-    vector<unsigned long> entitiesInRange = globals::posHandler.EntitiesInRanges(cam.left - 1, cam.left + cam.width, 
+    vector<unsigned long> entitiesInRange = globals::posHandler.InRange(cam.left - 1, cam.left + cam.width, 
                                                                          cam.bottom - 1, cam.bottom + cam.height);
     // if it has quad component then draw it
     for (auto& ent : entitiesInRange) {

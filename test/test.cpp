@@ -27,15 +27,17 @@ namespace {
                 globals::posHandler.add(ent.handle, entPos);
             }
         }
-    public:
         vector<entity> _entities;
+    public:
         unsigned int num = 10000;
         double lower = -10000.0;
         double upper = 10000.0;
     };
 
     TEST_F(PosTest, sorted) {
-        vector<unsigned long> sortedEntities = globals::posHandler.EntitiesInRanges(lower, upper, lower, upper);
+        // get the entities sorted by decreasing Y value in range
+        vector<unsigned long> sortedEntities = globals::posHandler.InRange(lower, upper, lower, upper);
+        // put their y position values into a vector to test if they are in fact sorted
         vector<Pos> sortedPos;
         sortedPos.reserve(num);
         for (auto& ent : sortedEntities) {
