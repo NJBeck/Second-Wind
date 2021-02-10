@@ -95,6 +95,7 @@
     <ClInclude Include="src\entities\Character.h" />
     <ClInclude Include="src\entities\entity.h" />
     <ClInclude Include="src\globals.h" />
+    <ClInclude Include="src\handlers\AnimationHandler.h" />
     <ClInclude Include="src\handlers\EventManager.h" />
     <ClInclude Include="src\handlers\ImageHandler.h" />
     <ClInclude Include="src\handlers\MovementHandler.h" />
@@ -110,6 +111,7 @@
     <ClCompile Include="src\game.cpp" />
     <ClCompile Include="src\glad\glad.c" />
     <ClCompile Include="src\globals.cpp" />
+    <ClCompile Include="src\handlers\AnimationHandler.cpp" />
     <ClCompile Include="src\handlers\EventManager.cpp" />
     <ClCompile Include="src\handlers\ImageHandler.cpp" />
     <ClCompile Include="src\handlers\MovementHandler.cpp" />

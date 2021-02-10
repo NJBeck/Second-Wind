@@ -1,6 +1,6 @@
 #include "entity.h"
 
-unsigned long entity::count = 0;
+uint64_t entity::count = 0;
 
 entity::entity() {
 	++count;

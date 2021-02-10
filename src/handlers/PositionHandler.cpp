@@ -5,9 +5,9 @@
 
 using namespace std;
 
-std::vector<unsigned long> PositionHandler::_InRange(double start, double stop, direction dir)
+std::vector<uint64_t> PositionHandler::_InRange(double const start, double const stop, direction const dir)
 {
-    vector<unsigned long> results;
+    vector<uint64_t> results;
     auto index = FirstPos(start, dir);
     // if index is -1 then left is larger than any in xPositions
     if (index == -1) { return results; }
@@ -31,10 +31,10 @@ std::vector<unsigned long> PositionHandler::_InRange(double start, double stop, 
     return results;
 }
 
-vector<unsigned long> PositionHandler::InRange(double left, double right, double bottom, double top) {
+vector<uint64_t> PositionHandler::InRange(double const left, double const right, double const bottom, double const top) {
 
-    vector<unsigned long> entitiesInRangeY = _InRange(bottom, top, direction::y);
-    vector<unsigned long> result;
+    vector<uint64_t> entitiesInRangeY = _InRange(bottom, top, direction::y);
+    vector<uint64_t> result;
     for (auto& ent : entitiesInRangeY) {
         double entXPos = xPositions[_xIndex[ent]].Pos;
         if (entXPos > left && entXPos < right) {
@@ -45,7 +45,7 @@ vector<unsigned long> PositionHandler::InRange(double left, double right, double
     return result;
 }
 
-Pos PositionHandler::GetPos(unsigned long handle)
+Pos PositionHandler::GetPos(uint64_t const handle)
 {
     Pos result;
     result.xPos = xPositions[_xIndex[handle]].Pos;
@@ -53,16 +53,16 @@ Pos PositionHandler::GetPos(unsigned long handle)
     return result;
 }
 
-long PositionHandler::FirstPos(double input, direction dir) {
+long PositionHandler::FirstPos(double const input, direction const dir) {
     vector<EntityPos>* _vec;
     if (dir == direction::y) { _vec = &yPositions; }
     else { _vec = &xPositions; }
 
     vector<EntityPos>& vec = *_vec;
 
-    unsigned long left = 0;
-    unsigned long right = vec.size() - 1;
-    unsigned long mid = (left + right) / 2;
+    uint64_t left = 0;
+    uint64_t right = vec.size() - 1;
+    uint64_t mid = (left + right) / 2;
 
     if (vec.empty()) { return 0; }
 
@@ -86,7 +86,7 @@ long PositionHandler::FirstPos(double input, direction dir) {
     return mid;
 
 }
-void PositionHandler::_changepos(unsigned long handle, double posn, direction dir) {
+void PositionHandler::_changepos(uint64_t const handle, double const posn, direction const dir) {
     // swaps the handle to the new appropriate position in xPositions and yPositions and updates Index
 
     // could be made more efficient by saving the changes of indices for the positions
@@ -96,16 +96,18 @@ void PositionHandler::_changepos(unsigned long handle, double posn, direction di
     double newPos;                                  // the sum of posn and the old pos value
 
     vector<EntityPos>* positions;
-    unordered_map<unsigned long, unsigned long>* indexMap;
+    unordered_map<uint64_t, uint32_t>* indexMap;
     if (dir == direction::y) {
         index = _yIndex[handle];
         newPos = yPositions[index].Pos + posn;
+        yPositions[index].Pos = newPos;
         positions = &yPositions;
         indexMap = &_yIndex;
     }
     else {
         index = _xIndex[handle];
         newPos = xPositions[index].Pos + posn;
+        xPositions[index].Pos = newPos;
         positions = &xPositions;
         indexMap = &_xIndex;
     }
@@ -154,23 +156,23 @@ void PositionHandler::_changepos(unsigned long handle, double posn, direction di
     }
 }
 
-void PositionHandler::ChangePos(unsigned long handle, Pos vec)
+void PositionHandler::ChangePos(uint64_t const handle, Pos const vec)
 {
     _changepos(handle, vec.xPos, direction::x);
     _changepos(handle, vec.yPos, direction::y);
 }
 
-void PositionHandler::add(unsigned long handle, Pos posn)
+void PositionHandler::add(uint64_t const handle, Pos const posn)
 {
     _addpos(handle, posn.xPos, direction::x);
     _addpos(handle, posn.yPos, direction::y);
 }
 
-void PositionHandler::_addpos(unsigned long handle, double posn, direction dir) {
+void PositionHandler::_addpos(uint64_t const handle, double const posn, direction const dir) {
     auto _index = FirstPos(posn, dir);
 
     vector<EntityPos>* positions;
-    unordered_map<unsigned long, unsigned long>* index;
+    unordered_map<uint64_t, uint32_t>* index;
    
     if(dir == direction::y) { 
         positions = &yPositions; 
@@ -200,6 +202,6 @@ void PositionHandler::_addpos(unsigned long handle, double posn, direction dir) 
     }
 }
 
-void PositionHandler::del(unsigned long)
+void PositionHandler::del(uint64_t const)
 {
 }

@@ -5,7 +5,7 @@
 
 using std::vector, std::string, std::cout, std::endl;
 
-void ImageHandler::add(unsigned long handle, string filePath) {
+void ImageHandler::add(uint64_t handle, string filePath) {
 	auto search = registry.find(filePath);
 	if (search == registry.end()) {
 		stbi_set_flip_vertically_on_load(true);
@@ -21,8 +21,8 @@ void ImageHandler::add(unsigned long handle, string filePath) {
 	registry[filePath].emplace(handle);
 }
 
-void ImageHandler::del(unsigned long handle, string filePath) {
-	std::set<unsigned long>& handleSet = registry[filePath];
+void ImageHandler::del(uint64_t handle, string filePath) {
+	std::set<uint64_t>& handleSet = registry[filePath];
 	auto search = handleSet.find(handle);
 	if (search != handleSet.end()) {
 		// if the handle has a reference to this image we remove it

@@ -2,18 +2,11 @@
 #include "globals.h"
 #include <cmath>
 
-void MovementHandler::add(unsigned long handle, double speed)
+void MovementHandler::add(uint64_t handle, double speed)
 {
 	speedAttribute[handle] = speed;
 }
-void MovementHandler::addVelocity(unsigned long handle, double xDir, double yDir) {
-	//if (xDir == 0.0 && yDir == 0.0) {
-	//	velocities.erase(handle);
-	//}
-	//else {
-	//	double normalizer = std::sqrt(xDir * xDir + yDir * yDir);
-	//	velocities[handle] = {xDir / normalizer, yDir / normalizer, speedAttribute[handle]};
-	//}
+void MovementHandler::addVelocity(uint64_t handle, double xDir, double yDir) {
 	auto it = velocities.find(handle);
 	if (it != velocities.end()) {
 		velocity& old = velocities[handle];
@@ -27,7 +20,7 @@ void MovementHandler::addVelocity(unsigned long handle, double xDir, double yDir
 	
 }
 
-void MovementHandler::remove(unsigned long handle)
+void MovementHandler::remove(uint64_t handle)
 {
 	velocities.erase(handle);
 	speedAttribute.erase(handle);

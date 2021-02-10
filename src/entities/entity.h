@@ -3,9 +3,9 @@
 #include <vector>
 
 class entity {
-	static unsigned long count;
+	static uint64_t count;
 public:
-	unsigned long handle;
+	uint64_t handle;
 	entity();
 	bool operator==(const entity&) const;
 	virtual void OnNotify(std::vector<SDL_Event*>);
@@ -19,7 +19,7 @@ namespace std
 	{
 		size_t operator()(const entity& e) const
 		{
-			return hash<unsigned long>()(e.handle);
+			return hash<uint64_t>()(e.handle);
 		}
 	};
 }

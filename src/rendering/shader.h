@@ -15,7 +15,7 @@
 class Shader
 {
 public:
-    unsigned int ID;
+    GLuint ID;
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
     Shader(const std::string vertexPath, const std::string fragmentPath)
@@ -52,7 +52,7 @@ public:
         const char* vShaderCode = vertexCode.c_str();
         const char* fShaderCode = fragmentCode.c_str();
         // 2. compile shaders
-        unsigned int vertex, fragment;
+        uint32_t vertex, fragment;
         // vertex shader
         vertex = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex, 1, &vShaderCode, NULL);

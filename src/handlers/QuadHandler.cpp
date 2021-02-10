@@ -4,13 +4,17 @@
 
 #define glCheckError() utility::glCheckError_(__FILE__, __LINE__) 
 
-using std::string, std::array, std::vector;
+using std::string, std::array, std::vector, std::pair;
 
-void QuadHandler::add(unsigned long handle, vector<QuadParams> params)
+void QuadHandler::add(uint64_t handle, vector<QuadParams> params, unsigned activeQuad = 0)
 {
-    // indices for GLQuadData for the quads of this entity
-    vector<unsigned int> QuadIndices;
 
+    // indices for GLQuadData for the quads of this entity
+    vector<uint32_t> QuadIndices;
+    QuadIndices.reserve(params.size());
+
+    // for each quad passed in we generate the shaders and buffers etc
+    // then we put the data in the maps
     for (auto& param : params) {
         // if this quad isn't already in the vector
         auto alias = aliases.find(param);
@@ -36,7 +40,7 @@ void QuadHandler::add(unsigned long handle, vector<QuadParams> params)
             };
 
             // generate our buffers/textures objects
-            unsigned int VBO, VAO, EBO;
+            uint32_t VBO, VAO, EBO;
             glGenVertexArrays(1, &VAO);
             glGenBuffers(1, &VBO);
             glGenBuffers(1, &EBO);
@@ -64,7 +68,7 @@ void QuadHandler::add(unsigned long handle, vector<QuadParams> params)
             glCheckError();
             // configure texture 
             // -------------------------
-            unsigned int texture;
+            uint32_t texture;
             glGenTextures(1, &texture);
             glBindTexture(GL_TEXTURE_2D, texture);
             glCheckError();
@@ -93,7 +97,21 @@ void QuadHandler::add(unsigned long handle, vector<QuadParams> params)
                 glGenerateMipmap(GL_TEXTURE_2D);
                 glCheckError();
             }
-            data.push_back({ param.shaders, texture, VAO, VBO, EBO });
+            // check if the shader for this quad has already been created
+            string const src = param.vertsource + param.fragsource;
+            auto shaderPtr = shaderIDs.find(src);
+            if (shaderPtr == shaderIDs.end()) {
+                auto vertsource = utility::getDataPath(param.vertsource);
+                auto fragsource = utility::getDataPath(param.fragsource);
+                Shader quadshader(vertsource, fragsource );
+                shaderIDs.emplace(src, quadshader);
+                GLQuadData glqd = { quadshader , texture, VAO, VBO, EBO };
+                data.push_back(glqd);
+            }
+            else {
+                GLQuadData glqd = { shaderPtr->second , texture, VAO, VBO, EBO };
+                data.push_back(glqd);
+            }
             QuadIndices.push_back(data.size() - 1);
             aliases[param] = data.size() - 1;
         }
@@ -103,29 +121,33 @@ void QuadHandler::add(unsigned long handle, vector<QuadParams> params)
         }
 
     }
-    Index[handle] = QuadIndices;
+    pair<uint32_t, vector<uint32_t>> _pair = { activeQuad, QuadIndices };
+    Index[handle] = _pair;
 
 }
 
-bool QuadHandler::HasQuad(unsigned long handle) {
-	auto search = Index.find(handle);
-	if (search != Index.end()) return true;
-	else return false;
-}
-
-vector<GLQuadData> QuadHandler::GetData(unsigned long handle){
-    // look up the indices of the data and return the vector
-    vector<GLQuadData> result;
-    for (auto& _index : Index[handle]) {
-        result.push_back(data[_index]);
+vector<GLQuadData> QuadHandler::GetData(uint64_t const handle){
+    vector<GLQuadData> quaddata;
+    auto found = Index.find(handle);
+    if (found != Index.end()) {
+        quaddata.emplace_back(data[found->first]);
     }
-    return result;
+    return quaddata;
+}
+
+void QuadHandler::SetActive(uint64_t const handle,QuadParams const& params) {
+    auto const alias = aliases.find(params);
+    if (alias != aliases.end()) {
+        Index[handle].first = alias->second;
+    }
+    // might want to do some logging if it's not found
 }
 
 bool operator==(const QuadParams& lhs, const QuadParams& rhs) {
     if (
         lhs.imagePath == rhs.imagePath &&
-        lhs.shaders.ID == rhs.shaders.ID &&
+        lhs.vertsource == rhs.vertsource &&
+        lhs.fragsource == rhs.fragsource &&
         lhs.width == rhs.width &&
         lhs.height == rhs.height &&
         lhs.row == rhs.row &&

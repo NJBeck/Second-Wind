@@ -7,12 +7,13 @@
 //TODO:	defer sorting perhaps,
 //		accumulate hashmap update during insertion/position updates,
 //		implement entity deletion/garbage collection
+//		add function that returns entities with their positions in a certain range
 
 #include <vector>
 #include <unordered_map>
 
 struct EntityPos {
-	unsigned long ID;
+	uint64_t ID;
 	double Pos;
 };
 
@@ -31,30 +32,30 @@ class PositionHandler {
 	// vectors of {entity, position} pairs sorted by position in increasing order
 	std::vector<EntityPos> xPositions;
 	std::vector<EntityPos> yPositions;
-	// maps entity to position
-	std::unordered_map<unsigned long, unsigned long> _xIndex;
-	std::unordered_map<unsigned long, unsigned long> _yIndex;
-
+	// maps entity to index in relevant positions vector
+	std::unordered_map<uint64_t, uint32_t> _xIndex;
+	std::unordered_map<uint64_t, uint32_t> _yIndex;
+	
 	// binary search for the index of first element in the vector that is larger than the input
 	// returns -1 if none is larger; direction selects whether to update X/Y directions
-	long FirstPos(double, direction);
+	long FirstPos(double const, direction const);
 	// helper function: returns entities which are at least as big as start and less than stop from a vector of positions
-	std::vector<unsigned long> _InRange(double start, double stop, direction);
+	std::vector<uint64_t> _InRange(double const start, double const stop, direction const);
 	// helper function for ChangePos
-	void _changepos(unsigned long, double, direction);
+	void _changepos(uint64_t const, double const, direction const);
 	// helper function for add
-	void _addpos(unsigned long, double, direction);
+	void _addpos(uint64_t const, double const, direction const);
 public:
 	// returns the entites with Pos between left/right and top/bottom
 	// returns sorted by Y from top to bottom
-	std::vector<unsigned long> InRange(double left, double right, double bottom, double top);
+	std::vector<uint64_t> InRange(double const left, double const right, double const bottom, double const top);
 	// returns Pos of entity from hashmap
-	Pos GetPos(unsigned long);
+	Pos GetPos(uint64_t const);
 	// changes entity position by Pos amount
-	void ChangePos(unsigned long, Pos);
+	void ChangePos(uint64_t const, Pos const);
 	// adds entity with this pos to handler
-	void add(unsigned long, Pos);
+	void add(uint64_t const, Pos const);
 	// removes this entity from handler
-	void del(unsigned long);
+	void del(uint64_t const);
 
 };

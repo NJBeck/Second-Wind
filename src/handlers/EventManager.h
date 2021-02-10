@@ -1,4 +1,5 @@
 #pragma once
+// TODO: add EntityManager to handle entities and their events (should take care of this nasty pointer business)
 
 #include "SDL2/SDL.h"
 #include <vector>

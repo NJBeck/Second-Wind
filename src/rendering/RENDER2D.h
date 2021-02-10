@@ -17,9 +17,9 @@ struct OrthoCam {
 
 class RENDER2D final: public entity
 {
-	OrthoCam cam;
 	SDL_Window* window;
 public:
+	OrthoCam cam;
 	RENDER2D(SDL_Window*, OrthoCam);
 	void DrawScene();
 	~RENDER2D();
