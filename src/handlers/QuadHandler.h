@@ -72,7 +72,7 @@ public:
 
 	// generates textures and buffers and associates sets of quads with entity
 	// first quad is the active quad by default
-	void add(uint64_t const, std::vector<QuadParams> const, unsigned const activeQuad);
+	void add(uint64_t const, std::vector<QuadParams>& const, uint32_t const activeQuad);
 	// returns the GLQuadData for that animation state of that quad
 	std::vector<GLQuadData> GetData(uint64_t const handle);
 };

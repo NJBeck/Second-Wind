@@ -19,7 +19,7 @@ enum class AnimType {
 struct AnimInfo {
 	std::unordered_set<AnimType> anims;	// animations this entity has
 	AnimType activeAnim;				// the active animation
-	unsigned activeQuad;				// index of active quad of in the cycle
+	uint32_t activeQuad;				// index of active quad of in the cycle
 
 	// animation implementation defined state values
 	double previous;					// the previous state of the animation

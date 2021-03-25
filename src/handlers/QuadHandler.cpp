@@ -6,7 +6,7 @@
 
 using std::string, std::array, std::vector, std::pair;
 
-void QuadHandler::add(uint64_t handle, vector<QuadParams> params, unsigned activeQuad = 0)
+void QuadHandler::add(uint64_t handle, vector<QuadParams>& params, uint32_t activeQuad = 0)
 {
 
     // indices for GLQuadData for the quads of this entity
@@ -130,7 +130,7 @@ vector<GLQuadData> QuadHandler::GetData(uint64_t const handle){
     vector<GLQuadData> quaddata;
     auto found = Index.find(handle);
     if (found != Index.end()) {
-        quaddata.emplace_back(data[found->first]);
+        quaddata.emplace_back(data[found->second.first]);
     }
     return quaddata;
 }

@@ -1,0 +1,5 @@
+* reimplement event manager to dispatch to an entity manager instead of having all entities be derived classes with virtual methods
+
+* add the ability for position handler to return entities arbitrarily far away if they are large enough (takes width/height into account)
+
+* add transform component so objects can have sub objects defined by their displacement from parent
