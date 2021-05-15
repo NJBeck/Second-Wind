@@ -11,51 +11,93 @@
 
 #include <vector>
 #include <unordered_map>
+#include <set>
+#include <array>
 
-struct EntityPos {
-	uint64_t ID;
-	double Pos;
-};
+#include "entities/entity.h"
+
+// entities are sorted by descending y + height value then x + width then ID
+bool operator<(QuadTree::EntPosDim& const, QuadTree::EntPosDim& const);
+bool operator<(QuadTree::NodeInfo& const, QuadTree::NodeInfo& const);
 
 struct Pos {
 	double xPos;
 	double yPos;
 };
+struct Dimensions {
+	float width;
+	float height;
+};
+class QuadTree {
+public:
+	struct EntPosDim {
+		entity::ID ID;
+		Dimensions dimensions;
+		Pos pos;
 
-enum class direction {
-	x,
-	y
+	};
+	struct NodeInfo {
+		uint32_t index;	// index of leaf in quadtree_ vector
+		// width/height/position of that leaf's quadrant
+		Dimensions dimensions;
+		Pos pos;	
+	};
+
+	QuadTree(double const xmin, double const xmax, double const ymin,
+		double const ymax);
+	std::vector<uint32_t> Add(entity::ID handle, 
+							  Pos const position, 
+					          Dimensions const dim);
+	friend class PositionHandler;
+private:
+	// the boundaries for the map
+	double x_min_;
+	double x_max_;
+	double y_min_;
+	double y_max_;
+
+	struct ListNode {
+		uint32_t next;	// index of first child in vector (0 if leaf)
+		std::set<EntPosDim> entities;
+	};
+
+
+	void Query(Pos const posn, Dimensions const dims, NodeInfo& current_node);
+	std::array<bool, 4> FindQuad(Pos const entity_pos, 
+								 Dimensions const entity_dim, 
+								 Pos const quadrant_pos, 
+								 Dimensions const quadrant_dim);
+	bool IntervalTest(double const start1, double const end1, 
+					  double const start2, double const end2);
+
+
+	uint32_t entity_max_;	// max num of entities before it splits
+	double quad_limit_;	// recursion depth limit for the tree
+	NodeInfo origin_;	// starting node to be iterated on by Query
+	std::set<NodeInfo> query_result_;	// stores the results from Query
+	std::vector<ListNode> quadtree_;
+
 };
 
-
 class PositionHandler {
-	// vectors of {entity, position} pairs sorted by position in increasing order
-	std::vector<EntityPos> xPositions;
-	std::vector<EntityPos> yPositions;
-	// maps entity to index in relevant positions vector
-	std::unordered_map<uint64_t, uint32_t> _xIndex;
-	std::unordered_map<uint64_t, uint32_t> _yIndex;
-	
-	// binary search for the index of first element in the vector that is larger than the input
-	// returns -1 if none is larger; direction selects whether to update X/Y directions
-	long FirstPos(double const, direction const);
-	// helper function: returns entities which are at least as big as start and less than stop from a vector of positions
-	std::vector<uint64_t> _InRange(double const start, double const stop, direction const);
-	// helper function for ChangePos
-	void _changepos(uint64_t const, double const, direction const);
-	// helper function for add
-	void _addpos(uint64_t const, double const, direction const);
 public:
-	// returns the entites with Pos between left/right and top/bottom
-	// returns sorted by Y from top to bottom
-	std::vector<uint64_t> InRange(double const left, double const right, double const bottom, double const top);
+
 	// returns Pos of entity from hashmap
-	Pos GetPos(uint64_t const);
-	// changes entity position by Pos amount
-	void ChangePos(uint64_t const, Pos const);
+	Pos GetPos(entity::ID const);
+	// changes entity position by x_vec in x direction/y_vec in y direction
+	void ChangePos(entity::ID const, double const x_vec, double const y_vec);
 	// adds entity with this pos to handler
-	void add(uint64_t const, Pos const);
+	void Add(entity::ID const handle, Pos const pos, Dimensions const dim);
 	// removes this entity from handler
-	void del(uint64_t const);
+	void Remove(entity::ID const);
+private:
+	struct PosData {
+		Dimensions dimensions;
+		Pos pos;
+		// indices for leaves in quadtree where entity is located
+		std::set<uint32_t> quadtree_indices;
+	};
+	std::unordered_map<entity::ID, PosData> map_;
+	QuadTree tree_;
 
 };

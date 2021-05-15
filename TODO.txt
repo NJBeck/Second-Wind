@@ -3,3 +3,5 @@
 * add the ability for position handler to return entities arbitrarily far away if they are large enough (takes width/height into account)
 
 * add transform component so objects can have sub objects defined by their displacement from parent
+
+* make the component handlers take other handlers they depend on in their constructors to explicitly show initialization order dependency

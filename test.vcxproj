@@ -97,6 +97,7 @@
     <ClInclude Include="src\handlers\MovementHandler.h" />
     <ClInclude Include="src\handlers\PositionHandler.h" />
     <ClInclude Include="src\handlers\QuadHandler.h" />
+    <ClInclude Include="src\handlers\QuadTree.h" />
     <ClInclude Include="src\rendering\RENDER2D.h" />
     <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\utility.h" />
@@ -134,6 +135,7 @@
     <ClCompile Include="src\handlers\MovementHandler.cpp" />
     <ClCompile Include="src\handlers\PositionHandler.cpp" />
     <ClCompile Include="src\handlers\QuadHandler.cpp" />
+    <ClCompile Include="src\handlers\QuadTree.cpp" />
     <ClCompile Include="src\rendering\RENDER2D.cpp" />
     <ClCompile Include="src\utility.cpp" />
     <ClCompile Include="test\test.cpp" />
@@ -141,4 +143,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-</Project> 
+</Project>

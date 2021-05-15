@@ -2,10 +2,12 @@
 #include "SDL2/SDL.h"
 #include <vector>
 
+
 class entity {
 	static uint64_t count;
 public:
-	uint64_t handle;
+	typedef uint64_t ID;
+	ID handle;
 	entity();
 	bool operator==(const entity&) const;
 	virtual void OnNotify(std::vector<SDL_Event*>);
