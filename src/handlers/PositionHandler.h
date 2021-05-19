@@ -30,17 +30,18 @@ struct Dimensions {
 };
 class QuadTree {
 public:
-	struct EntPosDim {
+	enum class Quadrants : uint8_t {
+		NW = 0,
+		NE,
+		SE,
+		SW,
+		NONE
+	};
+	struct PosData {
 		entity::ID ID;
 		Dimensions dimensions;
 		Pos pos;
 
-	};
-	struct NodeInfo {
-		uint32_t index;	// index of leaf in quadtree_ vector
-		// width/height/position of that leaf's quadrant
-		Dimensions dimensions;
-		Pos pos;	
 	};
 
 	QuadTree(double const xmin, double const xmax, double const ymin,
@@ -50,6 +51,7 @@ public:
 					          Dimensions const dim);
 	friend class PositionHandler;
 private:
+
 	// the boundaries for the map
 	double x_min_;
 	double x_max_;
@@ -57,26 +59,34 @@ private:
 	double y_max_;
 
 	struct ListNode {
-		uint32_t next;	// index of first child in vector (0 if leaf)
-		std::set<EntPosDim> entities;
+		uint32_t next;	// index of first child in quadtree_ (0 if leaf)
+		uint32_t index;	// index of data for the quadrant in data_
+	};
+
+	struct DataNode {
+		std::vector<Quadrants> directions;
+		std::set<uint32_t> entities;
 	};
 
 
-	void Query(Pos const posn, Dimensions const dims, NodeInfo& current_node);
+	void Query(Pos const posn, Dimensions const dims, uint32_t current_index);
+	// returns which quadrants the entity intersects clockwise starting in NW
+	std::set<uint32_t> query_result_;	// stores the results from Query
+
 	std::array<bool, 4> FindQuad(Pos const entity_pos, 
 								 Dimensions const entity_dim, 
 								 Pos const quadrant_pos, 
 								 Dimensions const quadrant_dim);
+	// tests whether 2 linear intervals intersect (used for FindQuad)
 	bool IntervalTest(double const start1, double const end1, 
 					  double const start2, double const end2);
 
 
-	uint32_t entity_max_;	// max num of entities before it splits
-	double quad_limit_;	// recursion depth limit for the tree
-	NodeInfo origin_;	// starting node to be iterated on by Query
-	std::set<NodeInfo> query_result_;	// stores the results from Query
+	uint32_t const entity_max_;	// max num of entities before it splits
+	uint32_t const quad_limit_;	// recursion depth limit for the tree
 	std::vector<ListNode> quadtree_;
-
+	std::vector<DataNode> leaf_data_;
+	std::vector<PosData> pos_data_;
 };
 
 class PositionHandler {
