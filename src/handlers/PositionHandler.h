@@ -11,103 +11,151 @@
 
 #include <vector>
 #include <unordered_map>
-#include <set>
+#include <unordered_set>
 #include <array>
+#include <set>
 
+// #include <ManagedContainer/ManagedContainer.h>
 #include "entities/entity.h"
 
-// entities are sorted by descending y + height value then x + width then ID
-bool operator<(QuadTree::EntPosDim& const, QuadTree::EntPosDim& const);
-bool operator<(QuadTree::NodeInfo& const, QuadTree::NodeInfo& const);
-
-struct Pos {
-	double xPos;
-	double yPos;
-};
-struct Dimensions {
-	float width;
-	float height;
-};
-class QuadTree {
-public:
-	enum class Quadrants : uint8_t {
-		NW = 0,
-		NE,
-		SE,
-		SW,
-		NONE
-	};
-	struct PosData {
-		entity::ID ID;
-		Dimensions dimensions;
-		Pos pos;
-
-	};
-
-	QuadTree(double const xmin, double const xmax, double const ymin,
-		double const ymax);
-	std::vector<uint32_t> Add(entity::ID handle, 
-							  Pos const position, 
-					          Dimensions const dim);
-	friend class PositionHandler;
-private:
-
-	// the boundaries for the map
-	double x_min_;
-	double x_max_;
-	double y_min_;
-	double y_max_;
-
-	struct ListNode {
-		uint32_t next;	// index of first child in quadtree_ (0 if leaf)
-		uint32_t index;	// index of data for the quadrant in data_
-	};
-
-	struct DataNode {
-		std::vector<Quadrants> directions;
-		std::set<uint32_t> entities;
-	};
-
-
-	void Query(Pos const posn, Dimensions const dims, uint32_t current_index);
-	// returns which quadrants the entity intersects clockwise starting in NW
-	std::set<uint32_t> query_result_;	// stores the results from Query
-
-	std::array<bool, 4> FindQuad(Pos const entity_pos, 
-								 Dimensions const entity_dim, 
-								 Pos const quadrant_pos, 
-								 Dimensions const quadrant_dim);
-	// tests whether 2 linear intervals intersect (used for FindQuad)
-	bool IntervalTest(double const start1, double const end1, 
-					  double const start2, double const end2);
-
-
-	uint32_t const entity_max_;	// max num of entities before it splits
-	uint32_t const quad_limit_;	// recursion depth limit for the tree
-	std::vector<ListNode> quadtree_;
-	std::vector<DataNode> leaf_data_;
-	std::vector<PosData> pos_data_;
-};
 
 class PositionHandler {
 public:
-
-	// returns Pos of entity from hashmap
-	Pos GetPos(entity::ID const);
-	// changes entity position by x_vec in x direction/y_vec in y direction
-	void ChangePos(entity::ID const, double const x_vec, double const y_vec);
-	// adds entity with this pos to handler
-	void Add(entity::ID const handle, Pos const pos, Dimensions const dim);
-	// removes this entity from handler
-	void Remove(entity::ID const);
-private:
-	struct PosData {
-		Dimensions dimensions;
-		Pos pos;
-		// indices for leaves in quadtree where entity is located
-		std::set<uint32_t> quadtree_indices;
+	struct Pos {
+		double xPos;
+		double yPos;
 	};
-	std::unordered_map<entity::ID, PosData> map_;
-	QuadTree tree_;
+	struct Dimensions {
+		double width;
+		double height;
+	};
+	struct Quad : public Pos, Dimensions{
+	};
 
+	PositionHandler(Quad boundaries);
+
+	void Add(EntityHandler::ID const handle, Quad const quad);
+
+	void Remove(EntityHandler::ID const handle);
+
+	void Move(EntityHandler::ID const handle, Pos const vec);
+
+	Quad GetPos(EntityHandler::ID const) const;
+
+	struct EntityQuad {
+		EntityHandler::ID handle;
+		Quad quad;
+	};
+	std::set<EntityQuad> EntitiesInArea(Quad const area) const;
+private:
+	enum Quadrants : uint8_t {
+		NW = 0,
+		NE,
+		SE,
+		SW
+	};
+	/*
+	// HELPER FUNCTIONS
+	*/
+
+	// finds the indices for the leaves in leaf_data_ that the entity with the
+	// desired quad would be found in
+	// can start anywhere in the tree with a start hint
+	std::unordered_set<uint32_t> Query(Quad const ent_quad, Quad init_quad,
+									   uint32_t const start) const;
+
+	// default query which starts at beginning of quadtree_
+	std::unordered_set<uint32_t> Query(Quad const ent_quad) const;
+
+	// inserts handle with Quad starting at a specific place in quadtree_
+	// where the TreeNode has Quad boundary_quad and index start
+	void Insert(EntityHandler::ID const handle, Quad const ent_quad, 
+				Quad const boundary_quad, uint32_t const start);
+
+	// makes a new leaf in leaf_data_ which is the given quadrant of the parent
+	uint32_t MakeNewLeaf(Quad const& parent, Quadrants, uint32_t parent_index);
+
+	// returns which quadrants the entity intersects clockwise starting in NW
+	std::array<bool, 4> FindQuad(Quad const entity_quad,
+								 Quad const quadrant_quad) const;
+	// tests whether 2 linear intervals intersect (used for FindQuad)
+	bool IntervalTest(double const start1, double const end1, 
+					  double const start2, double const end2) const;
+
+	// tests whether the boundaries of 2 intersecting quadrilaterals cross
+	// when quad1 is moved by a vector vec
+	bool CrossBoundary(Quad const quad1, Pos const vec, 
+					   Quad const quad2) const;
+
+	// removes entity from the list of leaves given 
+	// and reformats the trees as necessary
+	void RemoveFromLeaf(EntityHandler::ID const handle, 
+						std::unordered_set<uint32_t> const& leaf_indices);
+	
+
+	//// calculates the position, width, height of the quadrant from
+	//// the sequence of quadrants in the tree that specify it
+	//Quad CalculateQuadrant(std::vector<Quadrants>&);
+
+	// calculates the Quad of the given quadrant of the given quad q
+	Quad QuadOfQuadrant(Quad const q, Quadrants const) const;
+
+	// finds which quadrant of the parent the child is
+	// (supposing it is infact one of the quadrants)
+	Quadrants QuadrantOfQuad(Quad const parent, Quad const child) const;
+
+	// calculates the Quad of the parent to a quadrant
+	Quad ParentQuad(Quad const q, Quadrants const) const;
+
+	// finds which quadrant in the parent node the child is
+	Quadrants QuadrantOfParent(uint32_t const child) const;
+
+	// tests if the inner quad is fully contained in the outer
+	bool FullyContained(Quad const inner, Quad const outer) const;
+	/*
+	// END OF HELPER FUNCTIONS
+	*/
+	/*
+	// DATA MEMBERS
+	*/
+	struct TreeNode {
+		uint32_t previous;	// index of parent node in quadtree_
+		// indices for each sub quadrants next node in quadtree_
+		// in NW, NE, SE, SW order
+		std::array<uint32_t, 4> next_indices; 
+		// holds the indices for the 4 quadrants in leaf_data_ (if leaves)
+		// in NW, NE, SE, SW order
+		std::array<uint32_t, 4> leaf_indices;
+	};
+	std::vector<TreeNode> quadtree_;
+
+	struct LeafData {
+		std::unordered_set<EntityHandler::ID> entities; //entities in this leaf
+		Quad quad;	// the size and position of the quadrant
+		uint32_t quadtree_index;	// index to the quadtree node for this leaf
+		// need to know quadrant in the parent quadtree node because it has 4
+		Quadrants quadrant;	
+	};
+	std::vector<LeafData> leaf_data_;
+
+	struct EntityData {
+		// stores the indices to the leaves in leaf_data_ that the entity is in
+		std::unordered_set<uint32_t> indices;
+		// stores position and size info of entity
+		Quad quad;
+	};
+	// maps an entity to the indices of the leaves in leaf_data_ it's in
+	std::unordered_map<EntityHandler::ID, EntityData> index_;
+
+	uint32_t const entity_max_;	// max num of entities before it splits
+	double const resolution_;	// recursion depth limit for the tree
+	Quad const map_boundaries_; // the boundaries for the map
 };
+
+struct YDescendingOrder {
+	bool operator() (PositionHandler::EntityQuad const& lhs, 
+					 PositionHandler::EntityQuad const& rhs) const {
+		return lhs.quad.yPos > rhs.quad.yPos;
+	}
+};
+

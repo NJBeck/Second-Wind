@@ -5,11 +5,14 @@
 #include <vector>
 #include <unordered_map>
 #include <utility>
-#include <set>
+#include <unordered_set>
 
-#include "entities/entity.h"
+#include "handlers/EntityHandler.h"
 
-enum class events {
+
+class EventHandler {
+public:
+	enum class Events {
 	KD_A, // keydown events
 	KD_B,
 	KD_C,
@@ -69,20 +72,20 @@ enum class events {
 	KU_ESC,
 	QUIT
 };
+	void PollEvents();				// makes the vector of events queue_
+	void Add(EntityHandler::ID const, Events);	// subscribe entity to event
+	void Remove(EntityHandler::ID const, Events);	// unsubscribe entity
+	std::unordered_map<EntityHandler::ID,
+					   std::vector<Events> > const& GetEvents() const;
 
-class EventManager {
+private:
+	Events SDLtoEvent(SDL_Event const) const;
 	// the map of entities which are subscribed to an event
-	std::unordered_map<events, std::set<entity*>> eventMap;
-	// maps entities to the indices of the events they were subscribed to in eventQueue
-	std::unordered_map<entity*, std::vector<SDL_Event*>> notifications;
-
+	std::unordered_map<Events, 
+					   std::unordered_set<EntityHandler::ID> > subscriptions_;
+	// maps entities to their notifications
+	std::unordered_map<EntityHandler::ID, 
+					   std::vector<Events> > notifications_;
 	// the events get dispatched from a queue
-	std::vector<SDL_Event> eventQueue;
-public:
-	void PollEvents();				// makes the vector of events eventQueue
-	void DispatchEvents();			// gives each entity their notifications
-	void add(entity*, events);		// subscribe entity to event
-	void remove(entity*, events);	// unsubscribe entity
-	events SDLtoEvent(SDL_Event);	// translates SDL_Event to my event
-
+	std::vector<Events> queue_;
 };

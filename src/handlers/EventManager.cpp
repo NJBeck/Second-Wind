@@ -1,74 +1,76 @@
 #include "EventManager.h"
+using namespace std;
 
-
-void EventManager::add(entity* e, events evt)
+void EventHandler::Add(EntityHandler::ID const handle, Events evt)
 {
-	eventMap[evt].emplace(e);
+	subscriptions_[evt].emplace(handle);
 }
 
-void EventManager::remove(entity* e, events evt)
+void EventHandler::Remove(EntityHandler::ID const handle, Events evt)
 {
-	eventMap[evt].erase(e);
+	subscriptions_[evt].erase(handle);
+}
+
+unordered_map<EntityHandler::ID, vector<EventHandler::Events>> const& 
+EventHandler::GetEvents() const
+{
+	return notifications_;
 }
 
 
-void EventManager::PollEvents()
+void EventHandler::PollEvents()
 {
-	eventQueue.clear();
+	queue_.clear();
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
-		eventQueue.push_back(e);
-		// if entities are subscribed to this event we add it to their notifications
-		events myEvent = SDLtoEvent(e);
-		for (entity* ent : eventMap[myEvent]) {
-			notifications[ent].push_back(&eventQueue.back());
+		Events my_event = SDLtoEvent(e);
+		queue_.emplace_back(my_event);
+		// if entities are subscribed to this event we add to notifications
+		auto found = subscriptions_.find(my_event);
+		if (found != subscriptions_.end()) {
+			for (auto& handle : found->second) {
+				notifications_[handle].emplace_back(my_event);
+			}
 		}
-
 	}
 }
 
-void EventManager::DispatchEvents()
-{
-	for (auto& ent : notifications) {
-		ent.first->OnNotify(ent.second);
-	}
-	notifications.clear();
-}
 
-events EventManager::SDLtoEvent(SDL_Event sdlevt) {
+
+EventHandler::Events EventHandler::SDLtoEvent(SDL_Event const sdlevt) const{
 	switch (sdlevt.type) {
 		case SDL_KEYDOWN: {
 			switch (sdlevt.key.keysym.sym) {
-				case SDLK_w: return events::KD_W;
+				case SDLK_w: return Events::KD_W;
 		
-				case SDLK_a: return events::KD_A;
+				case SDLK_a: return Events::KD_A;
 		
-				case SDLK_s: return events::KD_S;
+				case SDLK_s: return Events::KD_S;
 		
-				case SDLK_d: return events::KD_D;
+				case SDLK_d: return Events::KD_D;
 	
-				case SDLK_ESCAPE: return events::KD_ESC;
+				case SDLK_ESCAPE: return Events::KD_ESC;
 			}
 			break;
 		}
 		case SDL_KEYUP: {
 			switch (sdlevt.key.keysym.sym) {
-			case SDLK_w: return events::KU_W;
+			case SDLK_w: return Events::KU_W;
 
-			case SDLK_a: return events::KU_A;
+			case SDLK_a: return Events::KU_A;
 
-			case SDLK_s: return events::KU_S;
+			case SDLK_s: return Events::KU_S;
 
-			case SDLK_d: return events::KU_D;
+			case SDLK_d: return Events::KU_D;
 
-			case SDLK_ESCAPE: return events::KU_ESC;
+			case SDLK_ESCAPE: return Events::KU_ESC;
 			}
 			break;
 		}
-		case SDL_MOUSEMOTION: return events::MM;
+		case SDL_MOUSEMOTION: return Events::MM;
 
-		case SDL_MOUSEBUTTONDOWN: return events::MBD;
+		case SDL_MOUSEBUTTONDOWN: return Events::MBD;
 
-		case SDL_QUIT: return events::QUIT;
+		case SDL_QUIT: return Events::QUIT;
 	}
 }

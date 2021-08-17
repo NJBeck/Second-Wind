@@ -1,12 +1,11 @@
 #include "handlers/QuadHandler.h"
 #include "utility.h"
-#include "globals.h"
 
 #define glCheckError() utility::glCheckError_(__FILE__, __LINE__) 
 
 using std::string, std::array, std::vector, std::pair;
 
-void QuadHandler::add(uint64_t handle, vector<QuadParams>& params, uint32_t activeQuad = 0)
+void QuadHandler::Add(uint64_t handle, vector<QuadParams>& params, uint32_t activeQuad = 0)
 {
 
     // indices for GLQuadData for the quads of this entity
@@ -16,34 +15,30 @@ void QuadHandler::add(uint64_t handle, vector<QuadParams>& params, uint32_t acti
     // for each quad passed in we generate the shaders and buffers etc
     // then we put the data in the maps
     for (auto& param : params) {
+        string image_path = utility::getDataPath(param.image_path);
         // if this quad isn't already in the vector
         auto alias = aliases.find(param);
         if (alias == aliases.end()) {
 
             // register handle with image
-            globals::imgHandler.add(handle, utility::getDataPath(param.imagePath));
-            ImageData& imd = globals::imgHandler.GetData(handle);
+            img_handler_->Add(handle, image_path);
+            auto& imd = img_handler_->GetImgData(image_path);
 
-            // index array
-            array<int, 6> indices{ {
-            0, 1, 3, // first triangle
-            0, 2, 3  // second triangle
-            } };
+
 
             // vertex array
             array<float, 16> verts;
             verts = {
-                param.width,	0.0f,	        (float)(param.col + 1) / param.cols,  (float)(param.row) / param.rows,	// bottom right
+                param.width,	0.0f,	        (float)(param.col + 1) / param.cols,    (float)(param.row) / param.rows,	// bottom right
                 0.0f,	        0.0f,	        (float)(param.col) / param.cols,		(float)(param.row) / param.rows,	// bottom left
-                param.width,   param.height,  (float)(param.col + 1) / param.cols,	(float)(param.row + 1) / param.rows,// top right
-                0.0f,	        param.height,  (float)(param.col) / param.cols,		(float)(param.row + 1) / param.rows	// top left
+                param.width,    param.height,   (float)(param.col + 1) / param.cols,	(float)(param.row + 1) / param.rows,// top right
+                0.0f,	        param.height,   (float)(param.col) / param.cols,		(float)(param.row + 1) / param.rows	// top left
             };
 
             // generate our buffers/textures objects
-            uint32_t VBO, VAO, EBO;
+            uint32_t VBO, VAO;
             glGenVertexArrays(1, &VAO);
             glGenBuffers(1, &VBO);
-            glGenBuffers(1, &EBO);
             glCheckError();
 
             // bind and load vertex and element buffers
@@ -53,10 +48,6 @@ void QuadHandler::add(uint64_t handle, vector<QuadParams>& params, uint32_t acti
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glCheckError();
             glBufferData(GL_ARRAY_BUFFER, sizeof(verts), &verts, GL_STATIC_DRAW);
-            glCheckError();
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glCheckError();
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
             glCheckError();
             // position attribute
             glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
@@ -126,7 +117,7 @@ void QuadHandler::add(uint64_t handle, vector<QuadParams>& params, uint32_t acti
 
 }
 
-vector<GLQuadData> QuadHandler::GetData(uint64_t const handle){
+vector<GLQuadData> QuadHandler::GetData(EntityHandler::ID const handle){
     vector<GLQuadData> quaddata;
     auto found = Index.find(handle);
     if (found != Index.end()) {
@@ -134,6 +125,21 @@ vector<GLQuadData> QuadHandler::GetData(uint64_t const handle){
     }
     return quaddata;
 }
+
+QuadHandler::QuadHandler(ImageHandler* imh): img_handler_(imh)
+{
+    // index array
+    array<int, 6> indices{ {
+    0, 1, 3, // first triangle
+    0, 2, 3  // second triangle
+    } };
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glCheckError();
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
+    glCheckError();
+}
+
 
 void QuadHandler::SetActive(uint64_t const handle,QuadParams const& params) {
     auto const alias = aliases.find(params);
@@ -145,7 +151,7 @@ void QuadHandler::SetActive(uint64_t const handle,QuadParams const& params) {
 
 bool operator==(const QuadParams& lhs, const QuadParams& rhs) {
     if (
-        lhs.imagePath == rhs.imagePath &&
+        lhs.image_path == rhs.image_path &&
         lhs.vertsource == rhs.vertsource &&
         lhs.fragsource == rhs.fragsource &&
         lhs.width == rhs.width &&

@@ -8,6 +8,8 @@
 #include <unordered_map>
 
 #include "rendering/shader.h"
+#include "handlers/EntityHandler.h"
+#include "handlers/ImageHandler.h"
 
 // the data necessary to draw the quad (other than the image itself)
 struct GLQuadData {
@@ -18,15 +20,14 @@ struct GLQuadData {
 	GLuint EBO;			// element buffer object
 };
 
-
-// data to pass in for construction of a quad
+// parameters to generate a quad
 struct QuadParams {
-	std::string imagePath;	// filepath for image relative to /data/ folder
+	std::string image_path; // path for image relative to /data/ folder
 	std::string vertsource;	// file path for the vertex shader source
 	std::string fragsource;
 	float width;	// screenspace width of quad
 	float height;
-	int row;		// row of quad's texture in spritesheet
+	int row;	// row of quad's texture in image
 	int rows;
 	int col;
 	int cols;
@@ -38,7 +39,7 @@ namespace std
 	{
 		std::size_t operator()(QuadParams const& qp) const noexcept
 		{
-			std::size_t h1 = std::hash<std::string>{}(qp.imagePath);
+			std::size_t h1 = std::hash<std::string>{}(qp.image_path);
 			std::size_t h2 = h1 ^ (std::hash<string>{}(qp.vertsource) << 1);
 			std::size_t h3 = h2 ^ (std::hash<float>{}(qp.width) << 1);
 			std::size_t h4 = h3 ^ (std::hash<float>{}(qp.height) << 1);
@@ -54,7 +55,8 @@ namespace std
 
 class QuadHandler
 {
-	// maps the concatenation of vertex shader source file and fragment source file strings
+	// maps the concatenation of vertex shader source file 
+	// + fragment source file strings
 	// to the program ID for that shader
 	// used to check if a program for that already exists
 	std::unordered_map<std::string, Shader> shaderIDs;
@@ -62,17 +64,23 @@ class QuadHandler
 	std::vector<GLQuadData> data;
 	// maps an entity to a vector of indices for each quad it has
 	// and the index of the active quad
-	std::unordered_map<uint64_t, std::pair<uint32_t, std::vector<uint32_t>>> Index;
-	// maps a quad to it's index to see if it's already in data		
+	std::unordered_map<uint64_t, std::pair<uint32_t, 
+										   std::vector<uint32_t>>> Index;
+	// maps a quad to its index to see if it's already in data		
 	std::unordered_map<QuadParams, uint32_t> aliases;
+
+	GLuint EBO;	// all quads use the same EBO
+	ImageHandler* img_handler_;
 
 public:
 	// sets the active quad for the entity
 	void SetActive(uint64_t const, QuadParams const&);
-
 	// generates textures and buffers and associates sets of quads with entity
 	// first quad is the active quad by default
-	void add(uint64_t const, std::vector<QuadParams>& const, uint32_t const activeQuad);
+	void Add(uint64_t const, std::vector<QuadParams>& const, 
+							 uint32_t const activeQuad);
 	// returns the GLQuadData for that animation state of that quad
-	std::vector<GLQuadData> GetData(uint64_t const handle);
+	std::vector<GLQuadData> GetData(EntityHandler::ID const handle);
+
+	QuadHandler(ImageHandler*);
 };

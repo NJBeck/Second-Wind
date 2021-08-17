@@ -1,49 +1,57 @@
 #include "handlers/MovementHandler.h"
 #include "globals.h"
-#include <cmath>
 
-void MovementHandler::add(uint64_t handle, double speed)
+#include <cmath>
+#include <string>
+#include <stdexcept>
+
+using namespace std;
+
+MovementHandler::MovementHandler(PositionHandler* ph, Timer* t)
+	: pos_handler_(ph), timer_(t)
+{}
+
+void MovementHandler::Add(uint64_t handle, Velocity vector)
 {
-	speedAttribute[handle] = speed;
+	velocities_[handle] = vector;
 }
-void MovementHandler::addVelocity(uint64_t handle, double xDir, double yDir) {
-	auto it = velocities.find(handle);
-	if (it != velocities.end()) {
-		velocity& old = velocities[handle];
-		old.xDirection += xDir;
-		old.yDirection += yDir;
+void MovementHandler::AddVelocity(EntityHandler::ID const handle, 
+								  Velocity const vec) {
+	auto it = velocities_.find(handle);
+	if (it != velocities_.end()) {
+		Velocity& ent_vector = velocities_[handle];
+		ent_vector.xVector += vec.xVector;
+		ent_vector.yVector += vec.yVector;
 	}
 	else {
-		velocities[handle] = { xDir, yDir, speedAttribute[handle] };
+		string err = handle + " not found when trying to add Velocity";
+		throw runtime_error(err);
 	}
 
 	
 }
 
-void MovementHandler::remove(uint64_t handle)
+void MovementHandler::SetVelocity(EntityHandler::ID const handle,
+								  Velocity const vec)
 {
-	velocities.erase(handle);
-	speedAttribute.erase(handle);
+	velocities_[handle] = { vec.xVector, vec.yVector };
 }
 
-void MovementHandler::update()
+void MovementHandler::Remove(EntityHandler::ID const handle)
 {
-	float timestep = globals::globalTimer.lastFrameTime() / 1000;
-	for (auto it = velocities.begin(); it != velocities.end();) {
-		double& xvel = it->second.xDirection;
-		double& yvel = it->second.yDirection;
-		// check to see if object is moving by seeing if it has a noticeable x or y velocity
-		if ((std::abs(xvel) > 0.0001) || (std::abs(yvel) > 0.0001)) {
-			double normalizer = std::sqrt(xvel * xvel + yvel * yvel);
-			double xDisplacement = it->second.xDirection * timestep * it->second.speed / normalizer;
-			double yDisplacement = it->second.yDirection * timestep * it->second.speed / normalizer;
-			globals::posHandler.ChangePos(it->first, { xDisplacement, yDisplacement });
-			++it;
-		}
-		// if there's no motion then we remove it from the velocities map
-		else {
-			it = velocities.erase(it);
-		}
+	velocities_.erase(handle);
+}
+
+void MovementHandler::Update() const
+{
+	float timestep = timer_->lastFrameTime() / 1000;
+	for (auto& ent_vector : velocities_) {
+		double const& xvel = ent_vector.second.xVector;
+		double const& yvel = ent_vector.second.yVector;
+		double x_displace = xvel * timestep;
+		double y_displace = yvel * timestep;
+
+		pos_handler_->Move(ent_vector.first, { x_displace, y_displace });
 
 	}
 }

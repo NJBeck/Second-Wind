@@ -4,21 +4,29 @@
 #include <cmath>
 using std::vector, std::string, std::abs;
 
-void AnimationHandler::_WalkAnim(uint64_t const handle, QuadParams& qp, double period, double const newPos) {
-	int const cycleLen = qp.cols - 1;	// cycleLen is number of different frames in the animation
-	// animation selects active quad in row based on how far entity has traveled
-	// 0 is the idle quad that is selected when there has been no movement
-	int const row = qp.row;				// row of the spritesheet for this animation
+AnimationHandler::AnimationHandler(QuadHandler* qh, PositionHandler* ph) :
+	quad_handler_(qh), pos_handler_(ph) {}
 
-	AnimInfo& info = animData[handle];	// get the stored animations for this entity
-	uint32_t prevActive = info.activeQuad; // save to check if it changed later
+void AnimationHandler::WalkAnim(EntityHandler::ID const handle, QuadParams& qp,
+								double const period, double const new_pos) {
+	// for the walk animation info.previous refers the the spatial distance
+	// through the cycle it was last update
+	// info.state refers to the 0 to 1.0 progress through the animation
+
+	// cycleLen is number of different frames in the animation
+	// we subtract 1 because 0 is the idle animation
+	int const cycleLen = qp.cols - 1;
+	// animation selects active quad in row based on how far entity has traveled
+
+	AnimInfo& info = anim_data_[handle];
+	auto prevActive = info.active_quad; // save to check if it changed later
 	// finding how far we've moved since last update
-	double displacement = abs(newPos - info.previous);
-	info.previous = newPos;	// store the new position
+	double displacement = abs(new_pos - info.previous);
+	info.previous = new_pos;	// store the new position
 
 	// if no movement then active quad should be idle position
 	if (displacement < 0.000001) {
-		info.activeQuad = 0;
+		info.active_quad = 0;
 		info.state = 0.0;	// state saves the progress through the animation cycle
 	}
 	else {
@@ -28,36 +36,37 @@ void AnimationHandler::_WalkAnim(uint64_t const handle, QuadParams& qp, double p
 		// get the new progress by adding the old progress and the displacement
 		// use modulo over the period to handle the rollover
 		info.state = fmod((info.state + displacement), period);
-		// frequency = 0.5 which is how frequently over the period the animation updates
+		// frequency = how frequently over the period the animation updates
 		double frequency = period / cycleLen;
-		// round up to the nearest frequency value to find the index for the active quad
+		// round up to the nearest multiple of frequency for index to active
 		// add 1 because 0 is just for the idle animation
-		info.activeQuad = static_cast<uint32_t>(info.state / frequency) + 1;
+		info.active_quad = static_cast<uint32_t>(info.state / frequency) + 1;
 	}
 
-	if (prevActive != info.activeQuad) {
-		qp.col = info.activeQuad;
-		globals::quadHandler.SetActive(handle, qp); // sets this one to the active quad
+	if (prevActive != info.active_quad) {
+		qp.col = info.active_quad;
+		quad_handler_->SetActive(handle, qp); // sets this one to the active quad
 	}
 }
 
-void AnimationHandler::update(uint64_t handle) {
-	auto found = animData.find(handle);
-	if(found != animData.end()){
-		switch (found->second.activeAnim) {
+void AnimationHandler::Update(EntityHandler::ID const handle) {
+	auto found = anim_data_.find(handle);
+	if(found != anim_data_.end()){
+		auto& ent_pos = pos_handler_->GetPos(handle);
+		switch (found->second.active_anim) {
 			case AnimType::PLAYERWALKUP: {
 				QuadParams qp{
-				"walkcycle/BODY_male.png",	// filepath for image relative to /data/ folder
-				"quadshader.vs",	// file path for the vertex shader source
+				"walkcycle/BODY_male.png",
+				"quadshader.vs",
 				"quadshader.fs",
-				2 / static_cast<float>(globals::renderer.cam.width),	// screenspace width of quad
-				2 / static_cast<float>(globals::renderer.cam.height),
-				3,		// row of quad's texture in spritesheet (counting from bottom up sheet up)
-				4,
-				0,
-				9
+				2 * ent_pos.width,
+				2 * ent_pos.height,
+				3,	//row
+				4,	//rows
+				0,	//column
+				9	//columns
 				};
-				_WalkAnim(handle, qp, 4.0, globals::posHandler.GetPos(handle).yPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.yPos);
 				break;
 			}
 
@@ -66,14 +75,14 @@ void AnimationHandler::update(uint64_t handle) {
 				"walkcycle/BODY_male.png",
 				"quadshader.vs",
 				"quadshader.fs",
-				2 / static_cast<float>(globals::renderer.cam.width),
-				2 / static_cast<float>(globals::renderer.cam.height),
+				2 * ent_pos.width,
+				2 * ent_pos.height,
 				1,
 				4,
 				0,
 				9
 				};
-				_WalkAnim(handle, qp, 4.0, globals::posHandler.GetPos(handle).yPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.yPos);
 				break;
 			}
 
@@ -82,14 +91,14 @@ void AnimationHandler::update(uint64_t handle) {
 				"walkcycle/BODY_male.png",
 				"quadshader.vs",
 				"quadshader.fs",
-				2 / static_cast<float>(globals::renderer.cam.width),
-				2 / static_cast<float>(globals::renderer.cam.height),
+				2 * ent_pos.width,
+				2 * ent_pos.height,
 				2,
 				4,
 				0,
 				9
 				};
-				_WalkAnim(handle, qp, 4.0, globals::posHandler.GetPos(handle).xPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.xPos);
 				break;
 			}
 
@@ -98,45 +107,59 @@ void AnimationHandler::update(uint64_t handle) {
 				"walkcycle/BODY_male.png",
 				"quadshader.vs",
 				"quadshader.fs",
-				2 / static_cast<float>(globals::renderer.cam.width),
-				2 / static_cast<float>(globals::renderer.cam.height),
+				2 * ent_pos.width,
+				2 * ent_pos.height,
 				0,
 				4,
 				0,
 				9
 				};
-				_WalkAnim(handle, qp, 4.0, globals::posHandler.GetPos(handle).xPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.xPos);
 				break;
 			}
 		}
 	}
 }
 
-void AnimationHandler::SetActive(uint64_t handle, AnimType tp)
+void AnimationHandler::SetActive(EntityHandler::ID const handle, AnimType tp)
 {
-	animData[handle].activeAnim = tp;
+	// TODO: error catching
+	anim_data_[handle].active_anim = tp;
 }
 
-void AnimationHandler::add(uint64_t handle, vector<AnimType> types, AnimType active)
+void AnimationHandler::Add(EntityHandler::ID const handle, 
+						   vector<AnimType> types)
 {
-	auto found = animData.find(handle);
-	if (found != animData.end()) {
+	auto found = anim_data_.find(handle);
+	if (found != anim_data_.end()) {
 		for (auto& type : types) {
 			found->second.anims.emplace(type);
 		}
-		found->second.activeAnim = active;
+		found->second.active_anim = types[0];
 	}
 	else {
 		AnimInfo info;
 		for (auto& type : types) {
 			info.anims.emplace(type);
 		}
-		info.activeAnim = active;
-		animData[handle] = info;
+		info.active_anim = types[0];
+		anim_data_[handle] = info;
 	}
 
 }
 
-void AnimationHandler::del(uint64_t)
-{
+void AnimationHandler::Remove(EntityHandler::ID const handle, 
+							  vector<AnimType> const types) {
+	auto found = anim_data_.find(handle);
+	if (found != anim_data_.end()) {
+		auto& ent_anims = found->second.anims;
+		for (auto& anim : types) {
+			ent_anims.erase(anim);
+		}
+		if (ent_anims.size() == 0) anim_data_.erase(handle);
+	}
+	else {
+		string err = "cannot remove entity " + handle + " from animations";
+		throw std::runtime_error(err);
+	}
 }

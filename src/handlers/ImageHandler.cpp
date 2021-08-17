@@ -1,41 +1,72 @@
 #include "ImageHandler.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
-#include <iostream>
+#include <stdexcept>
 
-using std::vector, std::string, std::cout, std::endl;
 
-void ImageHandler::add(uint64_t handle, string filePath) {
-	auto search = registry.find(filePath);
-	if (search == registry.end()) {
+using namespace std;
+
+void ImageHandler::Add(uint64_t handle, string filePath) {
+	auto search = registry_.find(filePath);
+	if (search == registry_.end()) {
 		stbi_set_flip_vertically_on_load(true);
 		int width, height, channels;
-		unsigned char* imageData = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
-		if (!imageData)
+		unsigned char* imagePtr = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
+		if (!imagePtr)
 		{
-			std::cout << "Failed to load image:" << filePath << std::endl;
+			string err = "could not load image " + filePath;
+			throw runtime_error(err);
 		}
-		data.push_back({imageData, width, height, channels});
-		dataIndex[handle] = data.size() - 1;
-	}
-	registry[filePath].emplace(handle);
-}
-
-void ImageHandler::del(uint64_t handle, string filePath) {
-	std::set<uint64_t>& handleSet = registry[filePath];
-	auto search = handleSet.find(handle);
-	if (search != handleSet.end()) {
-		// if the handle has a reference to this image we remove it
-		handleSet.erase(search);
-		if (handleSet.empty()) {
-			// if that was the last one we delete the image
-			ImageData& im = data[dataIndex[handle]];
-			delete[] im.dataPtr;
-			// we set the dataPtr of the ImageData to NULL for future garbage collector use
-			im.dataPtr = NULL;
-		}
+		registry_[filePath] = { 1, imagePtr };
+		index_[handle].emplace(imagePtr, width, height, channels);
 	}
 	else {
-		cout << "entity: " << handle << "tried to del from ImageHandler but wasn't found" << endl;
+		search->second.count++;
+		auto data = search->second.data;
+		index_[handle].emplace(data.dataPtr, data.width, 
+							   data.height, data.channels);
+	}
+}
+
+void ImageHandler::Remove(uint64_t handle, string filePath) {
+	auto found = registry_.find(filePath);
+	if (found != registry_.end()) {
+		auto entity_file_iter = index_[handle].begin();
+		while (entity_file_iter->first != found->second.data.dataPtr) {
+			++entity_file_iter;
+		}
+		if (entity_file_iter == index_[handle].end()) {
+			string err = "tried to remove file " + filePath + 
+						 " from non-possessing entity";
+			throw runtime_error(err);
+		}
+		index_[handle].erase(entity_file_iter);
+	}
+}
+
+vector<ImageHandler::ImageData> 
+ImageHandler::GetData(uint64_t const handle) const
+{	
+	vector<ImageData> result;
+	auto found = index_.find(handle);
+	if (found != index_.end()) {
+		for (auto& imgData : found->second) {
+			result.emplace_back(imgData.first, imgData.second[0],
+								imgData.second[1], imgData.second[2]);
+		}
+	}
+	return result;
+}
+
+ImageHandler::ImageData ImageHandler::GetImgData(std::string const src) const
+{
+	auto found = registry_.find(src);
+	if (found != registry_.end()) {
+		return found->second.data;
+	}
+	else {
+		string err = src + " not found in image registry";
+		throw runtime_error(err);
 	}
 }
