@@ -10,6 +10,8 @@ namespace utility {
     // gives the absolute path to the asset from the relative path in /data/ folder
     std::string getDataPath(std::string);
 
+    void InitGL(SDL_Window** , int width, int height);
+
     GLenum glCheckError_(const char* file, int line);
 
 }

@@ -1,20 +1,22 @@
-#include "EventManager.h"
+#include "EventHandler.h"
 using namespace std;
 
-void EventHandler::Add(EntityHandler::ID const handle, Events evt)
+void EventHandler::Add(EntityID const handle, Events evt)
 {
 	subscriptions_[evt].emplace(handle);
 }
 
-void EventHandler::Remove(EntityHandler::ID const handle, Events evt)
+void EventHandler::Remove(EntityID const handle, Events evt)
 {
 	subscriptions_[evt].erase(handle);
 }
 
-unordered_map<EntityHandler::ID, vector<EventHandler::Events>> const& 
+unordered_map<EntityID, vector<EventHandler::Events>> const& 
 EventHandler::GetEvents() const
 {
-	return notifications_;
+	auto& notifs = notifications_;
+	notifications_.empty();
+	return notifs;
 }
 
 
@@ -24,10 +26,10 @@ void EventHandler::PollEvents()
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		Events my_event = SDLtoEvent(e);
-		queue_.emplace_back(my_event);
 		// if entities are subscribed to this event we add to notifications
 		auto found = subscriptions_.find(my_event);
 		if (found != subscriptions_.end()) {
+			queue_.emplace_back(my_event);
 			for (auto& handle : found->second) {
 				notifications_[handle].emplace_back(my_event);
 			}

@@ -3,29 +3,32 @@
 #include "glad/glad.h"
 
 #include "handlers/PositionHandler.h"
-#include "handlers/QuadHandler.h"
-#include "handlers/EventManager.h"
+#include "handlers/AnimationHandler.h"
+#include "handlers/EventHandler.h"
 
-#define LATEST_SDL_ERROR std::cout << "SDL failure:" << SDL_GetError() << std::endl;
+#define LATEST_SDL_ERROR std::cout << "SDL failure:" << \
+							SDL_GetError() << std::endl;
 
-struct OrthoCam {
-	PositionHandler::Quad quad; // world space info of camera
-	int w_width;	// camera width in pixels
-	int w_height;
-};
 
 class Renderer
 {
+public:
+	struct OrthoCam: public PositionHandler::Quad {
+		// PositionHandler::Quad quad; // world space info of camera
+		int w_width;	// camera width in pixels
+		int w_height;
+	};
+	Renderer(SDL_Window*, PositionHandler*, QuadHandler*, AnimationHandler*);
+	~Renderer();
+	// draws entities located within the given camera's range
+	void DrawScene();
+	void AddCamera(OrthoCam const&);
+	bool alive;
+private:
 	SDL_Window* window;
 	PositionHandler* pos_handler_;
 	QuadHandler* quad_handler_;
 	AnimationHandler* anim_handler_;
-	OrthoCam camera;
-public:
-	bool alive;
-	Renderer(SDL_Window*, PositionHandler*, QuadHandler*, AnimationHandler*);
-	~Renderer();
-	void DrawScene();
-
+	std::vector<OrthoCam> cameras_; // 0th item is active cam
 };
 

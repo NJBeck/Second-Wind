@@ -1,11 +1,13 @@
-#include "handlers/QuadHandler.h"
+#include "QuadHandler.h"
 #include "utility.h"
 
 #define glCheckError() utility::glCheckError_(__FILE__, __LINE__) 
 
 using std::string, std::array, std::vector, std::pair;
 
-void QuadHandler::Add(uint64_t handle, vector<QuadParams>& params, uint32_t activeQuad = 0)
+void QuadHandler::Add(EntityID const handle, 
+                      vector<QuadParams> const& params, 
+                      uint32_t activeQuad = 0)
 {
 
     // indices for GLQuadData for the quads of this entity
@@ -117,7 +119,7 @@ void QuadHandler::Add(uint64_t handle, vector<QuadParams>& params, uint32_t acti
 
 }
 
-vector<GLQuadData> QuadHandler::GetData(EntityHandler::ID const handle){
+vector<GLQuadData> QuadHandler::GetData(EntityID const handle){
     vector<GLQuadData> quaddata;
     auto found = Index.find(handle);
     if (found != Index.end()) {
@@ -134,6 +136,7 @@ QuadHandler::QuadHandler(ImageHandler* imh): img_handler_(imh)
     0, 2, 3  // second triangle
     } };
     glGenBuffers(1, &EBO);
+    glCheckError();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glCheckError();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
@@ -141,7 +144,7 @@ QuadHandler::QuadHandler(ImageHandler* imh): img_handler_(imh)
 }
 
 
-void QuadHandler::SetActive(uint64_t const handle,QuadParams const& params) {
+void QuadHandler::SetActive(EntityID const handle, QuadParams const& params) {
     auto const alias = aliases.find(params);
     if (alias != aliases.end()) {
         Index[handle].first = alias->second;

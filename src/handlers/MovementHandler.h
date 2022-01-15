@@ -13,7 +13,7 @@ struct Velocity {
 class MovementHandler
 {
 	// map for currently moving objects
-	std::unordered_map<EntityHandler::ID, Velocity> velocities_;
+	std::unordered_map<EntityID, Velocity> velocities_;
 	Timer* timer_;
 public:
 	PositionHandler* pos_handler_;
@@ -21,11 +21,11 @@ public:
 	// register and entity with a given Velocity
 	void Add(uint64_t const handle, Velocity vec = { 0, 0 });
 	// add xVelocity and yVelocity to entity
-	void AddVelocity(EntityHandler::ID const, Velocity const);
+	void AddVelocity(EntityID const, Velocity const);
 	// sets the Velocity of entity
-	void SetVelocity(EntityHandler::ID const, Velocity const);
+	void SetVelocity(EntityID const, Velocity const);
 	// remove an entity from this system
-	void Remove(EntityHandler::ID const handle);
+	void Remove(EntityID const handle);
 	// update all the positions of moving objects based on their velocities
 	void Update() const;
 };

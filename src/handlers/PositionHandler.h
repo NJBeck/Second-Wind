@@ -15,8 +15,8 @@
 #include <array>
 #include <set>
 
+#include "globals.h"
 // #include <ManagedContainer/ManagedContainer.h>
-#include "entities/entity.h"
 
 
 class PositionHandler {
@@ -34,19 +34,23 @@ public:
 
 	PositionHandler(Quad boundaries);
 
-	void Add(EntityHandler::ID const handle, Quad const quad);
+	void Add(EntityID const handle, Quad const quad);
 
-	void Remove(EntityHandler::ID const handle);
+	void Remove(EntityID const handle);
 
-	void Move(EntityHandler::ID const handle, Pos const vec);
+	void Move(EntityID const handle, Pos const vec);
 
-	Quad GetPos(EntityHandler::ID const) const;
+	Quad GetPos(EntityID const) const;
 
 	struct EntityQuad {
-		EntityHandler::ID handle;
+		EntityID handle;
 		Quad quad;
 	};
-	std::set<EntityQuad> EntitiesInArea(Quad const area) const;
+	struct YDescendingOrder {
+		bool operator() (EntityQuad const& lhs, EntityQuad const& rhs) const;
+	};
+	std::set<EntityQuad, YDescendingOrder> 
+	EntitiesInArea(Quad const area) const;
 private:
 	enum Quadrants : uint8_t {
 		NW = 0,
@@ -69,7 +73,7 @@ private:
 
 	// inserts handle with Quad starting at a specific place in quadtree_
 	// where the TreeNode has Quad boundary_quad and index start
-	void Insert(EntityHandler::ID const handle, Quad const ent_quad, 
+	void Insert(EntityID const handle, Quad const ent_quad, 
 				Quad const boundary_quad, uint32_t const start);
 
 	// makes a new leaf in leaf_data_ which is the given quadrant of the parent
@@ -89,7 +93,7 @@ private:
 
 	// removes entity from the list of leaves given 
 	// and reformats the trees as necessary
-	void RemoveFromLeaf(EntityHandler::ID const handle, 
+	void RemoveFromLeaf(EntityID const handle, 
 						std::unordered_set<uint32_t> const& leaf_indices);
 	
 
@@ -130,7 +134,7 @@ private:
 	std::vector<TreeNode> quadtree_;
 
 	struct LeafData {
-		std::unordered_set<EntityHandler::ID> entities; //entities in this leaf
+		std::unordered_set<EntityID> entities; //entities in this leaf
 		Quad quad;	// the size and position of the quadrant
 		uint32_t quadtree_index;	// index to the quadtree node for this leaf
 		// need to know quadrant in the parent quadtree node because it has 4
@@ -145,17 +149,11 @@ private:
 		Quad quad;
 	};
 	// maps an entity to the indices of the leaves in leaf_data_ it's in
-	std::unordered_map<EntityHandler::ID, EntityData> index_;
+	std::unordered_map<EntityID, EntityData> index_;
 
 	uint32_t const entity_max_;	// max num of entities before it splits
 	double const resolution_;	// recursion depth limit for the tree
 	Quad const map_boundaries_; // the boundaries for the map
 };
 
-struct YDescendingOrder {
-	bool operator() (PositionHandler::EntityQuad const& lhs, 
-					 PositionHandler::EntityQuad const& rhs) const {
-		return lhs.quad.yPos > rhs.quad.yPos;
-	}
-};
 

@@ -7,7 +7,7 @@ using std::vector, std::string, std::abs;
 AnimationHandler::AnimationHandler(QuadHandler* qh, PositionHandler* ph) :
 	quad_handler_(qh), pos_handler_(ph) {}
 
-void AnimationHandler::WalkAnim(EntityHandler::ID const handle, QuadParams& qp,
+void AnimationHandler::WalkAnim(EntityID const handle, QuadParams& qp,
 								double const period, double const new_pos) {
 	// for the walk animation info.previous refers the the spatial distance
 	// through the cycle it was last update
@@ -49,7 +49,7 @@ void AnimationHandler::WalkAnim(EntityHandler::ID const handle, QuadParams& qp,
 	}
 }
 
-void AnimationHandler::Update(EntityHandler::ID const handle) {
+void AnimationHandler::Update(EntityID const handle) {
 	auto found = anim_data_.find(handle);
 	if(found != anim_data_.end()){
 		auto& ent_pos = pos_handler_->GetPos(handle);
@@ -121,13 +121,13 @@ void AnimationHandler::Update(EntityHandler::ID const handle) {
 	}
 }
 
-void AnimationHandler::SetActive(EntityHandler::ID const handle, AnimType tp)
+void AnimationHandler::SetActive(EntityID const handle, AnimType tp)
 {
 	// TODO: error catching
 	anim_data_[handle].active_anim = tp;
 }
 
-void AnimationHandler::Add(EntityHandler::ID const handle, 
+void AnimationHandler::Add(EntityID const handle, 
 						   vector<AnimType> types)
 {
 	auto found = anim_data_.find(handle);
@@ -148,7 +148,7 @@ void AnimationHandler::Add(EntityHandler::ID const handle,
 
 }
 
-void AnimationHandler::Remove(EntityHandler::ID const handle, 
+void AnimationHandler::Remove(EntityID const handle, 
 							  vector<AnimType> const types) {
 	auto found = anim_data_.find(handle);
 	if (found != anim_data_.end()) {
@@ -159,7 +159,8 @@ void AnimationHandler::Remove(EntityHandler::ID const handle,
 		if (ent_anims.size() == 0) anim_data_.erase(handle);
 	}
 	else {
-		string err = "cannot remove entity " + handle + " from animations";
+		string err = "cannot remove entity " + std::to_string(handle) + 
+					 " from animation handler";
 		throw std::runtime_error(err);
 	}
 }

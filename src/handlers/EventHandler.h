@@ -7,8 +7,7 @@
 #include <utility>
 #include <unordered_set>
 
-#include "handlers/EntityHandler.h"
-
+#include "globals.h"
 
 class EventHandler {
 public:
@@ -73,18 +72,18 @@ public:
 	QUIT
 };
 	void PollEvents();				// makes the vector of events queue_
-	void Add(EntityHandler::ID const, Events);	// subscribe entity to event
-	void Remove(EntityHandler::ID const, Events);	// unsubscribe entity
-	std::unordered_map<EntityHandler::ID,
+	void Add(EntityID const, Events);	// subscribe entity to event
+	void Remove(EntityID const, Events);	// unsubscribe entity
+	std::unordered_map<EntityID,
 					   std::vector<Events> > const& GetEvents() const;
 
 private:
 	Events SDLtoEvent(SDL_Event const) const;
 	// the map of entities which are subscribed to an event
 	std::unordered_map<Events, 
-					   std::unordered_set<EntityHandler::ID> > subscriptions_;
+					   std::unordered_set<EntityID> > subscriptions_;
 	// maps entities to their notifications
-	std::unordered_map<EntityHandler::ID, 
+	std::unordered_map<EntityID, 
 					   std::vector<Events> > notifications_;
 	// the events get dispatched from a queue
 	std::vector<Events> queue_;

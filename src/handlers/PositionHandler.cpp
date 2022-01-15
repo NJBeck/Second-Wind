@@ -19,13 +19,13 @@ PositionHandler::PositionHandler(Quad boundaries)
     MakeNewLeaf(map_boundaries_, Quadrants::SW, 0);
 }
 
-void PositionHandler::Add(EntityHandler::ID const handle, Quad const quad)
+void PositionHandler::Add(EntityID const handle, Quad const quad)
 {
     Insert(handle, quad, map_boundaries_, 0);
 }
 
 
-void PositionHandler::Move(EntityHandler::ID const handle, Pos const vec) {
+void PositionHandler::Move(EntityID const handle, Pos const vec) {
     auto found = index_.find(handle);
     if (found != index_.end()) {
         // indices for in leaf_data_ to remove the entity from
@@ -80,12 +80,12 @@ void PositionHandler::Move(EntityHandler::ID const handle, Pos const vec) {
     }
 }
 
-void PositionHandler::Remove(EntityHandler::ID const handle) {
+void PositionHandler::Remove(EntityID const handle) {
     RemoveFromLeaf(handle, index_[handle].indices);
     index_.erase(handle);
 }
 
-PositionHandler::Quad PositionHandler::GetPos(EntityHandler::ID const handle) const
+PositionHandler::Quad PositionHandler::GetPos(EntityID const handle) const
 {
     auto found = index_.find(handle);
     if (found != index_.end()) {
@@ -97,16 +97,16 @@ PositionHandler::Quad PositionHandler::GetPos(EntityHandler::ID const handle) co
     }
 }
 
-set<PositionHandler::EntityQuad> 
+set<PositionHandler::EntityQuad, PositionHandler::YDescendingOrder> 
 PositionHandler::EntitiesInArea(Quad const area) const{
-    set<EntityQuad> results;
+    set<EntityQuad, YDescendingOrder> results;
 
     unordered_set<uint32_t> QueryResults = Query(area);
-    unordered_set<EntityHandler::ID> EntityResults;
+    unordered_set<EntityID> EntityResults;
 
     for (auto& index : QueryResults) {
         auto& entities_in_leaf = leaf_data_[index].entities;
-        for (EntityHandler::ID handle : entities_in_leaf) {
+        for (EntityID handle : entities_in_leaf) {
             EntityResults.emplace(handle);
         }
     }
@@ -115,7 +115,7 @@ PositionHandler::EntitiesInArea(Quad const area) const{
         auto found = index_.find(handle);
         if (found != index_.end()) {
             ent_quad = found->second.quad;
-            results.emplace(handle, ent_quad);
+            results.insert({ handle, ent_quad });
         }
         else {
             string err = handle + "not found when accessing Quad position";
@@ -205,9 +205,9 @@ unordered_set<uint32_t> PositionHandler::Query(Quad const ent_quad,
         new_quad.width = current_quadrant.width / 2;
 
         auto const& quad_node = quadtree_[current_index];
-        auto quadrants = FindQuad(init_quad, current_quadrant);
         // now we find which quadrants ent_quad intersects
         // add them to todo if not a leaf and continue iterating 
+        auto quadrants = FindQuad(ent_quad, current_quadrant);
         if (quadrants[0]) {
             auto next_index = quad_node.next_indices[0];
             // if next == 0 then we are at a leaf
@@ -263,7 +263,7 @@ unordered_set<uint32_t> PositionHandler::Query(Quad const ent_quad,
     return query_results;
 }
 
-void PositionHandler::Insert(EntityHandler::ID const handle, Quad const ent_quad, 
+void PositionHandler::Insert(EntityID const handle, Quad const ent_quad, 
                              Quad const boundary_quad, uint32_t const start)
 {
     index_[handle] = {};
@@ -271,7 +271,7 @@ void PositionHandler::Insert(EntityHandler::ID const handle, Quad const ent_quad
     entity_data.quad = ent_quad;
 
     auto leafs = Query(ent_quad, boundary_quad, 0);
-    unordered_map<uint32_t, unordered_set<EntityHandler::ID> > todo;
+    unordered_map<uint32_t, unordered_set<EntityID> > todo;
     for (auto& leaf : leafs) todo[leaf].emplace(handle);
 
     while(!todo.empty()) {
@@ -495,7 +495,7 @@ bool PositionHandler::CrossBoundary(Quad const ent_quad, Pos const vec,
 }
 
 void 
-PositionHandler::RemoveFromLeaf(EntityHandler::ID const handle,
+PositionHandler::RemoveFromLeaf(EntityID const handle,
                                 unordered_set<uint32_t> const& leaf_indices) {
     // index of leaf node in quadtree_ with at least 1 (now) empty quadrant,
     // quadrant in the node, Quad of that quadrant
@@ -614,16 +614,16 @@ PositionHandler::ParentQuad(Quad const q,
     switch(corner) {
     case Quadrants::NW: {
         parent_quad.xPos = q.xPos;
-        parent_quad.yPos = q.yPos + parent_quad.height;
+        parent_quad.yPos = q.yPos - q.height;
         break;
     }
     case Quadrants::NE: {
-        parent_quad.xPos = q.xPos + parent_quad.width;
-        parent_quad.yPos = q.yPos + parent_quad.height;
+        parent_quad.xPos = q.xPos - q.width;
+        parent_quad.yPos = q.yPos - q.height;
         break;
     }
     case Quadrants::SE: {
-        parent_quad.xPos = q.xPos + parent_quad.width;
+        parent_quad.xPos = q.xPos - q.width;
         parent_quad.yPos = q.yPos;
         break;
     }
@@ -633,20 +633,17 @@ PositionHandler::ParentQuad(Quad const q,
         break;
     }
     }
+    return parent_quad;
 }
 
 bool PositionHandler::FullyContained(Quad const inner, 
                                      Quad const outer) const
 {
     bool fully_contained =
-        inner.xPos >= outer.xPos
-        && inner.yPos >= outer.yPos
-        && inner.xPos + inner.width <
-        outer.xPos
-        + outer.width
-        && inner.yPos + inner.height <
-        outer.yPos
-        + outer.height;
+        inner.xPos >= outer.xPos && 
+        inner.yPos >= outer.yPos && 
+        inner.xPos + inner.width < outer.xPos + outer.width && 
+        inner.yPos + inner.height < outer.yPos + outer.height;
     return fully_contained;
 }
 
@@ -659,4 +656,11 @@ PositionHandler::QuadrantOfParent(uint32_t const child) const
     if (parent_indices[1] == child) return Quadrants::NE;
     if (parent_indices[2] == child) return Quadrants::SE;
     if (parent_indices[3] == child) return Quadrants::SW;
+}
+
+bool 
+PositionHandler::YDescendingOrder::operator()(EntityQuad const& lhs, 
+                                              EntityQuad const& rhs) const
+{
+    return lhs.quad.yPos > rhs.quad.yPos;
 }

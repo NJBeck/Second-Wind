@@ -1,7 +1,6 @@
 // TODO: use uniform to scale quads appropriately
-#include "RENDER2D.h"
+#include "Renderer.h"
 #include "utility.h"
-#include "globals.h"
 
 #include <iostream>
 #include <array>
@@ -19,42 +18,23 @@ Renderer::Renderer(SDL_Window* w, PositionHandler* ph,
     :window(w), pos_handler_(ph), quad_handler_(qh), anim_handler_(ah), 
     alive(true)
 {
-    camera = { {0.0, 0.0, 16.0, 9.0}, 1280, 720 };
-    // initializing SDL, GLAD and make window and context
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-    {
-        LATEST_SDL_ERROR
-        SDL_Quit();
-    }
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 
-                        SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-
-    window = SDL_CreateWindow("Second Wind", SDL_WINDOWPOS_CENTERED, 
-                               SDL_WINDOWPOS_CENTERED, camera.w_width,
-                               camera.w_height, SDL_WINDOW_OPENGL);
-    if (window == NULL)
-    {
-        LATEST_SDL_ERROR
-    }
-    SDL_GLContext GLcontext = SDL_GL_CreateContext(window);
-    if (!gladLoadGL()) {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-    }
-    SDL_GL_SetSwapInterval(1);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 }
 
 void Renderer::DrawScene()
 {
+    if (!alive) return;
     glClear(GL_COLOR_BUFFER_BIT);
 
+    OrthoCam& camera = cameras_[0];
+
+    PositionHandler::Quad camera_quad = { camera.xPos, camera.yPos,
+                                          camera.width, camera.height };
+
     // get the position info for the entities that are within range
-    auto in_range = pos_handler_->EntitiesInArea(camera.quad);
+    auto in_range = pos_handler_->EntitiesInArea(camera_quad);
 
     // vectors to put the quads and positions into
-    vector<tuple<EntityHandler::ID, PositionHandler::Quad, GLQuadData> > ent_data;
+    vector<tuple<EntityID, PositionHandler::Quad, GLQuadData> > ent_data;
     for (auto& ent : in_range) {
         // update the animation so the correct quad is selected
         anim_handler_->Update(ent.handle);
@@ -69,8 +49,12 @@ void Renderer::DrawScene()
         auto position = get<1>(ent_data[i]);
         auto ent_id = get<0>(ent_data[i]);
         // figure out where on the screen the quad should go
-        float screenX = 2 * (position.xPos - camera.quad.xPos) / camera.quad.width - 1;
-        float screenY = 2 * (position.yPos - camera.quad.yPos) / camera.quad.height - 1;
+        float screenX = 2 * (position.xPos - camera_quad.xPos) 
+                           / camera_quad.width - 1;
+        float screenY = 2 * (position.yPos - camera_quad.yPos) 
+                           / camera_quad.height - 1;
+        // scale uniform to draw the entity at the right size on screen
+        float scale = position.width / camera.width;
 
         // specify texture unit
         glActiveTexture(GL_TEXTURE0);
@@ -85,6 +69,7 @@ void Renderer::DrawScene()
         glCheckError();
 
         quad.shaders.setVec2("screenPos", screenX, screenY);
+        quad.shaders.setFloat("scale", scale);
 
         // specify the texture unit for the uniform
         quad.shaders.setInt("texture1", 0);
@@ -108,4 +93,10 @@ void Renderer::DrawScene()
 
 Renderer::~Renderer() {
     SDL_DestroyWindow(window);
+
+    SDL_Quit();
+}
+
+void Renderer::AddCamera(OrthoCam const& cam) {
+    cameras_.emplace_back(cam);
 }

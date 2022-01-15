@@ -2,6 +2,7 @@
 // decides when to select which quad to be actively drawn for an entity
 
 #include "QuadHandler.h"
+#include "PositionHandler.h"
 
 #include <unordered_set>
 #include <cstdint>
@@ -27,23 +28,23 @@ struct AnimInfo {
 
 class AnimationHandler {
 	// holds the animation data for each entity
-	std::unordered_map<EntityHandler::ID, AnimInfo> anim_data_;
+	std::unordered_map<EntityID, AnimInfo> anim_data_;
 	// figures which quad should be active given the current quad and animation
 	// period determines the spatial length of a full cycle
 	// new_pos is the distance traveled since last update
-	void WalkAnim(EntityHandler::ID const, QuadParams&, double const period, 
+	void WalkAnim(EntityID const, QuadParams&, double const period, 
 				  double const new_pos);
 public:
 	// updates the entity states and sets the active quads for the entities
 	// different AnimTypes update in different ways
-	void Update(EntityHandler::ID const);
+	void Update(EntityID const);
 
 	// sets the active animation for the entity
-	void SetActive(EntityHandler::ID const, AnimType);
+	void SetActive(EntityID const, AnimType);
 
 	// register handle with array of animations with the first being the active
-	void Add(EntityHandler::ID const, std::vector<AnimType> const);
-	void Remove(EntityHandler::ID const, std::vector<AnimType> const);
+	void Add(EntityID const, std::vector<AnimType> const);
+	void Remove(EntityID const, std::vector<AnimType> const);
 
 	AnimationHandler(QuadHandler*, PositionHandler*);
 

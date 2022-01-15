@@ -15,7 +15,7 @@ void MovementHandler::Add(uint64_t handle, Velocity vector)
 {
 	velocities_[handle] = vector;
 }
-void MovementHandler::AddVelocity(EntityHandler::ID const handle, 
+void MovementHandler::AddVelocity(EntityID const handle, 
 								  Velocity const vec) {
 	auto it = velocities_.find(handle);
 	if (it != velocities_.end()) {
@@ -31,13 +31,13 @@ void MovementHandler::AddVelocity(EntityHandler::ID const handle,
 	
 }
 
-void MovementHandler::SetVelocity(EntityHandler::ID const handle,
+void MovementHandler::SetVelocity(EntityID const handle,
 								  Velocity const vec)
 {
 	velocities_[handle] = { vec.xVector, vec.yVector };
 }
 
-void MovementHandler::Remove(EntityHandler::ID const handle)
+void MovementHandler::Remove(EntityID const handle)
 {
 	velocities_.erase(handle);
 }

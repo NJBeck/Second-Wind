@@ -8,8 +8,7 @@
 #include <unordered_map>
 
 #include "rendering/shader.h"
-#include "handlers/EntityHandler.h"
-#include "handlers/ImageHandler.h"
+#include "ImageHandler.h"
 
 // the data necessary to draw the quad (other than the image itself)
 struct GLQuadData {
@@ -74,13 +73,13 @@ class QuadHandler
 
 public:
 	// sets the active quad for the entity
-	void SetActive(uint64_t const, QuadParams const&);
+	void SetActive(EntityID const, QuadParams const&);
 	// generates textures and buffers and associates sets of quads with entity
 	// first quad is the active quad by default
-	void Add(uint64_t const, std::vector<QuadParams>& const, 
+	void Add(EntityID const, std::vector<QuadParams>const &, 
 							 uint32_t const activeQuad);
 	// returns the GLQuadData for that animation state of that quad
-	std::vector<GLQuadData> GetData(EntityHandler::ID const handle);
+	std::vector<GLQuadData> GetData(EntityID const handle);
 
 	QuadHandler(ImageHandler*);
 };

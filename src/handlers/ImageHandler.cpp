@@ -7,66 +7,57 @@
 
 using namespace std;
 
-void ImageHandler::Add(uint64_t handle, string filePath) {
-	auto search = registry_.find(filePath);
-	if (search == registry_.end()) {
+void ImageHandler::Add(EntityID handle, Image img) {
+	// load image if reference count is 0 then increments
+	auto img_data = registry_.find(img)->second;
+	registry_[img].count++;
+	index_[handle].emplace(img);
+	if (img_data.count == 0) {
 		stbi_set_flip_vertically_on_load(true);
 		int width, height, channels;
-		unsigned char* imagePtr = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
+		unsigned char* imagePtr = stbi_load(img_data.path.c_str(), &width, 
+											&height, &channels, 0);
 		if (!imagePtr)
 		{
-			string err = "could not load image " + filePath;
+			string err = "could not load image " + img_data.path;
 			throw runtime_error(err);
 		}
-		registry_[filePath] = { 1, imagePtr };
-		index_[handle].emplace(imagePtr, width, height, channels);
-	}
-	else {
-		search->second.count++;
-		auto data = search->second.data;
-		index_[handle].emplace(data.dataPtr, data.width, 
-							   data.height, data.channels);
-	}
+		registry_[img].meta_data.width = width;
+        registry_[img].meta_data.height = height;
+        registry_[img].meta_data.channels = channels;
+        registry_[img].data_ptr = imagePtr;	}
 }
 
-void ImageHandler::Remove(uint64_t handle, string filePath) {
-	auto found = registry_.find(filePath);
-	if (found != registry_.end()) {
-		auto entity_file_iter = index_[handle].begin();
-		while (entity_file_iter->first != found->second.data.dataPtr) {
-			++entity_file_iter;
-		}
-		if (entity_file_iter == index_[handle].end()) {
-			string err = "tried to remove file " + filePath + 
-						 " from non-possessing entity";
-			throw runtime_error(err);
-		}
-		index_[handle].erase(entity_file_iter);
+void ImageHandler::Remove(EntityID const handle, Image img) {
+	auto count = registry_[img].count;
+	auto found = index_[handle].find(img);
+	if (count == 0 || found == index_[handle].end()) {
+		string exep = "cannot deregister entity " + to_string(handle) +
+					  " from " + registry_[img].path;
+		throw runtime_error(exep);
 	}
+	registry_[img].count--;
+	index_[handle].erase(img);
 }
 
-vector<ImageHandler::ImageData> 
-ImageHandler::GetData(uint64_t const handle) const
+vector<ImageHandler::ImageMetaData> 
+ImageHandler::GetData(EntityID const handle) const
 {	
-	vector<ImageData> result;
+	vector<ImageMetaData> result;
 	auto found = index_.find(handle);
 	if (found != index_.end()) {
-		for (auto& imgData : found->second) {
-			result.emplace_back(imgData.first, imgData.second[0],
-								imgData.second[1], imgData.second[2]);
+		auto img_set = found->second;
+		for (Image img : img_set) {
+			auto data = registry_.find(img)->second.meta_data;
+			result.push_back(data);
 		}
 	}
+	else {
+		string excep = "cannot find entity " + to_string(handle) +
+					   " in image index";
+		throw runtime_error(excep);
+	}
+
 	return result;
 }
 
-ImageHandler::ImageData ImageHandler::GetImgData(std::string const src) const
-{
-	auto found = registry_.find(src);
-	if (found != registry_.end()) {
-		return found->second.data;
-	}
-	else {
-		string err = src + " not found in image registry";
-		throw runtime_error(err);
-	}
-}

@@ -88,9 +88,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\globals.h" />
     <ClInclude Include="src\handlers\AnimationHandler.h" />
     <ClInclude Include="src\handlers\EntityHandler.h" />
-    <ClInclude Include="src\handlers\EventManager.h" />
+    <ClInclude Include="src\handlers\EventHandler.h" />
     <ClInclude Include="src\handlers\ImageHandler.h" />
     <ClInclude Include="src\handlers\MovementHandler.h" />
     <ClInclude Include="src\handlers\PositionHandler.h" />
@@ -125,7 +126,7 @@
     <ClCompile Include="src\glad\glad.c" />
     <ClCompile Include="src\handlers\AnimationHandler.cpp" />
     <ClCompile Include="src\handlers\EntityHandler.cpp" />
-    <ClCompile Include="src\handlers\EventManager.cpp" />
+    <ClCompile Include="src\handlers\EventHandler.cpp" />
     <ClCompile Include="src\handlers\ImageHandler.cpp" />
     <ClCompile Include="src\handlers\MovementHandler.cpp" />
     <ClCompile Include="src\handlers\PositionHandler.cpp" />

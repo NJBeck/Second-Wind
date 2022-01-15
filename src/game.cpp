@@ -7,13 +7,20 @@
 
 int main(int argc, char* args[]) {
     SDL_Window* window = NULL;
+    utility::InitGL(&window, 1280, 720);
     Timer global_timer;
     ImageHandler img_handler;
     QuadHandler quad_handler(&img_handler);
-    PositionHandler pos_handler({-1*1<<9, -1 * 1 << 9, 1 << 10,-1 << 10 });
+    PositionHandler::Quad map_boundaries;
+    map_boundaries.width = (long)1 << 20;
+    map_boundaries.height = map_boundaries.width;
+    map_boundaries.xPos = -1 * map_boundaries.width / 2;  // bottom left corner
+    map_boundaries.yPos = map_boundaries.xPos;
+    PositionHandler pos_handler(map_boundaries);
     AnimationHandler anim_handler(&quad_handler, &pos_handler);
     MovementHandler move_handler(&pos_handler, &global_timer);
     Renderer renderer(window, &pos_handler, &quad_handler, &anim_handler);
+    renderer.AddCamera({{ 0.0, 0.0, 16.0, 9.0 }, 1280, 720});
     EventHandler event_handler;
     EntityHandler entity_handler(&anim_handler, &renderer, 
                                  &event_handler, &move_handler);
