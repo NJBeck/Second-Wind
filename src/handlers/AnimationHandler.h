@@ -8,33 +8,26 @@
 #include <cstdint>
 #include <vector>
 
-// enumerates the animations in the game
-enum class AnimType {
-	PLAYERWALKUP,
-	PLAYERWALKRIGHT,
-	PLAYERWALKLEFT,
-	PLAYERWALKDOWN
-};
-
-// contains the info for the animations and state of an entity
-struct AnimInfo {
-	std::unordered_set<AnimType> anims;	// animations this entity has
-	AnimType active_anim;				// the active animation
-	uint32_t active_quad;				// index of active quad of in the cycle
-	// animation implementation defined state values
-	double previous;					// the previous state of the animation
-	double state;						// the progress through the animation
-};
 
 class AnimationHandler {
-	// holds the animation data for each entity
-	std::unordered_map<EntityID, AnimInfo> anim_data_;
-	// figures which quad should be active given the current quad and animation
-	// period determines the spatial length of a full cycle
-	// new_pos is the distance traveled since last update
-	void WalkAnim(EntityID const, QuadParams&, double const period, 
-				  double const new_pos);
-public:
+	public:
+	// enumerates the animations in the game
+	enum class AnimType {
+		PLAYERWALKUP,
+		PLAYERWALKRIGHT,
+		PLAYERWALKLEFT,
+		PLAYERWALKDOWN
+	};
+
+	// contains the info for the animations and state of an entity
+	struct AnimInfo {
+		std::unordered_set<AnimType> anims;	// animations this entity has
+		AnimType active_anim;				// the active animation
+		uint32_t active_quad;				// index of active quad of in the cycle
+		// animation implementation defined state values
+		double previous;					// the previous state of the animation
+		double state;						// the progress through the animation
+	};
 	// updates the entity states and sets the active quads for the entities
 	// different AnimTypes update in different ways
 	void Update(EntityID const);
@@ -47,6 +40,18 @@ public:
 	void Remove(EntityID const, std::vector<AnimType> const);
 
 	AnimationHandler(QuadHandler*, PositionHandler*);
+
+private:
+	// maps an animation to its quad parameters
+	static const std::unordered_map<AnimType, 
+							 std::vector<QuadHandler::QuadParams> >anim_quads_;
+	// holds the animation data for each entity
+	std::unordered_map<EntityID, AnimInfo> anim_data_;
+	// figures which quad should be active given the current quad and animation
+	// period determines the spatial length of a full cycle
+	// new_pos is the distance traveled since last update
+	void WalkAnim(EntityID const, QuadHandler::QuadParams&, 
+			      double const period, double const new_pos);
 
 	QuadHandler* quad_handler_;
 	PositionHandler* pos_handler_;

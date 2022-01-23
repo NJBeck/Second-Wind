@@ -8,59 +8,45 @@ using namespace std;
 EntityID EntityHandler::count = 0;
 
 EntityHandler::EntityHandler(AnimationHandler* ah, Renderer* r,
-							 EventHandler* eh, MovementHandler* mh) :
-	anim_handler_(ah), event_handler_(eh), move_handler_(mh), renderer_(r)
+							 EventHandler* eh, MovementHandler* mh,
+							 ShaderHandler* sh, PositionHandler* ph) :
+	anim_handler_(ah), event_handler_(eh), move_handler_(mh), 
+	renderer_(r), shader_handler_(sh), position_handler_(ph)
 {
-	pos_handler_ = move_handler_->pos_handler_;
-	quad_handler_ = anim_handler_->quad_handler_;
 	AddRenderer();
 }
 
 EntityID EntityHandler::AddCharacter(PositionHandler::Quad quad_pos)
 {
-	auto handle = AddEntity(Type::Character);
-	// generate the quad params for the character
-	vector<QuadParams> quads;
-	string img{ "walkcycle/BODY_male.png" };
-	string vs{ "quadshader.vs" };
-	string fs{ "quadshader.fs" };
-	float width = quad_pos.width * 2;
-	float height = quad_pos.height * 2;
-	for (int i = 0; i < 9; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			quads.push_back({ img, vs, fs,
-								width,
-								height,
-								j, 4,
-								i, 9 });
-		}
-	}
+	auto handle = AddEntity(EntityType::Character);
 	// add components
-	// 33 should be the index for the first PLAYERWALKDOWN quad
-	quad_handler_->Add(handle, quads, 33);
-	anim_handler_->Add(handle,
-		{ AnimType::PLAYERWALKUP, AnimType::PLAYERWALKDOWN, 
-		  AnimType::PLAYERWALKLEFT, AnimType::PLAYERWALKRIGHT });
-	pos_handler_->Add(handle, quad_pos);
-	event_handler_->Add(handle, EventHandler::Events::KD_W);
-	event_handler_->Add(handle, EventHandler::Events::KD_A);
-	event_handler_->Add(handle, EventHandler::Events::KD_S);
-	event_handler_->Add(handle, EventHandler::Events::KD_D);
+	anim_handler_->Add(handle,{ AnimationHandler::AnimType::PLAYERWALKUP, 
+								AnimationHandler::AnimType::PLAYERWALKDOWN, 
+								AnimationHandler::AnimType::PLAYERWALKLEFT, 
+								AnimationHandler::AnimType::PLAYERWALKRIGHT });
+	position_handler_->Add(handle, quad_pos);
+	event_handler_->Add(handle, {	EventHandler::Events::KD_W,
+									EventHandler::Events::KD_A,
+									EventHandler::Events::KD_S,
+									EventHandler::Events::KD_D });
 	move_handler_->Add(handle);
+	shader_handler_->Add(ShaderHandler::VertexShaders::Quad, 
+						 ShaderHandler::FragmentShaders::Quad, 
+						 handle);
 	return handle;
 }
 
 EntityID EntityHandler::AddOrthoCamera(PositionHandler::Quad position)
 {
-	auto handle = AddEntity(Type::OrthoCamera);
-	pos_handler_->Add(handle, position);
+	auto handle = AddEntity(EntityType::OrthoCamera);
+	position_handler_->Add(handle, position);
 	return handle;
 }
 
 EntityID EntityHandler::AddRenderer() {
-	auto handle = AddEntity(Type::Renderer);
-	event_handler_->Add(handle, EventHandler::Events::KD_ESC);
-	event_handler_->Add(handle, EventHandler::Events::QUIT);
+	auto handle = AddEntity(EntityType::Renderer);
+	event_handler_->Add(handle, { EventHandler::Events::KD_ESC, 
+								  EventHandler::Events::QUIT });
 	return handle;
 }
 
@@ -71,24 +57,26 @@ void EntityHandler::UpdateEvents()
 		auto& handle = notif.first;
 		auto found = type_map_.find(handle);
 		if (found == type_map_.end()) {
-			string err = "entity " + to_string(handle) + " not found in type_map";
+			string err = "entity " + to_string(handle) + 
+						 " not found in type_map";
 			throw runtime_error(err);
 		}
 		switch (found->second) {
-			case Type::Character: {
+			case EntityType::Character: {
 				NotifyCharacter(notif.second, handle);
 				break;
 			}
-			case Type::Renderer: {
+			case EntityType::Renderer: {
 				NotifyRenderer(notif.second, handle);
 				break;
 			}
 		}
 	}
+	event_handler_->ClearEvents();
 }
 
 
-EntityID EntityHandler::AddEntity(Type const ent_type)
+EntityID EntityHandler::AddEntity(EntityType const ent_type)
 {
 	++count;
 	type_map_[count] = ent_type;
@@ -104,54 +92,58 @@ void EntityHandler::NotifyCharacter(vector<EventHandler::Events> const& evts,
 		switch (evt) {
 		case EventHandler::Events::KD_W: {
 			inputYDir += 1;
-			event_handler_->Remove(handle, EventHandler::Events::KD_W);
-			event_handler_->Add(handle, EventHandler::Events::KU_W);
-			anim_handler_->SetActive(handle, AnimType::PLAYERWALKUP);
+			event_handler_->Remove(handle, { EventHandler::Events::KD_W });
+			event_handler_->Add(handle, { EventHandler::Events::KU_W });
+			anim_handler_->SetActive(handle, 
+				AnimationHandler::AnimType::PLAYERWALKUP);
 			break;
 			}
 		case EventHandler::Events::KD_A: {
 			inputXDir += -1;
-			event_handler_->Remove(handle, EventHandler::Events::KD_A);
-			event_handler_->Add(handle, EventHandler::Events::KU_A);
-			anim_handler_->SetActive(handle, AnimType::PLAYERWALKLEFT);
+			event_handler_->Remove(handle, { EventHandler::Events::KD_A });
+			event_handler_->Add(handle, { EventHandler::Events::KU_A });
+			anim_handler_->SetActive(handle,
+				AnimationHandler::AnimType::PLAYERWALKLEFT);
 			break;
 			}
 		case EventHandler::Events::KD_S: {
 			inputYDir += -1;
-			event_handler_->Remove(handle, EventHandler::Events::KD_S);
-			event_handler_->Add(handle, EventHandler::Events::KU_S);
-			anim_handler_->SetActive(handle, AnimType::PLAYERWALKDOWN);
+			event_handler_->Remove(handle, { EventHandler::Events::KD_S });
+			event_handler_->Add(handle, { EventHandler::Events::KU_S });
+			anim_handler_->SetActive(handle, 
+				AnimationHandler::AnimType::PLAYERWALKDOWN);
 			break;
 			}
 		case EventHandler::Events::KD_D: {
 			inputXDir += 1;
-			event_handler_->Remove(handle, EventHandler::Events::KD_D);
-			event_handler_->Add(handle, EventHandler::Events::KU_D);
-			anim_handler_->SetActive(handle, AnimType::PLAYERWALKRIGHT);
+			event_handler_->Remove(handle, { EventHandler::Events::KD_D });
+			event_handler_->Add(handle, { EventHandler::Events::KU_D });
+			anim_handler_->SetActive(handle, 
+				AnimationHandler::AnimType::PLAYERWALKRIGHT);
 			break;
 			}
 		case EventHandler::Events::KU_W: {
 			inputYDir += -1;
-			event_handler_->Remove(handle, EventHandler::Events::KU_W);
-			event_handler_->Add(handle, EventHandler::Events::KD_W);
+			event_handler_->Remove(handle, { EventHandler::Events::KU_W });
+			event_handler_->Add(handle, { EventHandler::Events::KD_W });
 			break;
 			}
 		case EventHandler::Events::KU_A: {
 			inputXDir += 1;
-			event_handler_->Remove(handle, EventHandler::Events::KU_A);
-			event_handler_->Add(handle, EventHandler::Events::KD_A);
+			event_handler_->Remove(handle, { EventHandler::Events::KU_A });
+			event_handler_->Add(handle, { EventHandler::Events::KD_A });
 			break;
 			}
 		case EventHandler::Events::KU_S: {
 			inputYDir += 1;
-			event_handler_->Remove(handle, EventHandler::Events::KU_S);
-			event_handler_->Add(handle, EventHandler::Events::KD_S);
+			event_handler_->Remove(handle, { EventHandler::Events::KU_S });
+			event_handler_->Add(handle, { EventHandler::Events::KD_S });
 			break;
 			}
 		case EventHandler::Events::KU_D: {
 			inputXDir += -1;
-			event_handler_->Remove(handle, EventHandler::Events::KU_D);
-			event_handler_->Add(handle, EventHandler::Events::KD_D);
+			event_handler_->Remove(handle, { EventHandler::Events::KU_D });
+			event_handler_->Add(handle, { EventHandler::Events::KD_D });
 			break;
 			}
 		}

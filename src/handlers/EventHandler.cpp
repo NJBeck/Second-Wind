@@ -1,22 +1,29 @@
 #include "EventHandler.h"
-using namespace std;
+using std::vector, std::unordered_map;
 
-void EventHandler::Add(EntityID const handle, Events evt)
+void EventHandler::Add(EntityID const handle, vector<Events> const evts)
 {
-	subscriptions_[evt].emplace(handle);
+	for (auto& evt : evts) {
+		subscriptions_[evt].emplace(handle);
+	}
 }
 
-void EventHandler::Remove(EntityID const handle, Events evt)
+void EventHandler::Remove(EntityID const handle, vector<Events> evts)
 {
-	subscriptions_[evt].erase(handle);
+	for (auto& evt : evts) {
+		subscriptions_[evt].erase(handle);
+	}
+}
+
+void EventHandler::ClearEvents()
+{
+	notifications_.clear();
 }
 
 unordered_map<EntityID, vector<EventHandler::Events>> const& 
 EventHandler::GetEvents() const
 {
-	auto& notifs = notifications_;
-	notifications_.empty();
-	return notifs;
+	return notifications_;
 }
 
 
@@ -36,8 +43,6 @@ void EventHandler::PollEvents()
 		}
 	}
 }
-
-
 
 EventHandler::Events EventHandler::SDLtoEvent(SDL_Event const sdlevt) const{
 	switch (sdlevt.type) {

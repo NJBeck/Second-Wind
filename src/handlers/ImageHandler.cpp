@@ -40,6 +40,16 @@ void ImageHandler::Remove(EntityID const handle, Image img) {
 	index_[handle].erase(img);
 }
 
+ImageHandler::ImageMetaData ImageHandler::GetImageData(Image img)
+{
+	return registry_[img].meta_data;
+}
+
+unsigned char* ImageHandler::GetImagePtr(Image img)
+{
+	return registry_[img].data_ptr;
+}
+
 vector<ImageHandler::ImageMetaData> 
 ImageHandler::GetData(EntityID const handle) const
 {	

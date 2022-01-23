@@ -15,10 +15,11 @@
 class Shader
 {
 public:
+
     GLuint ID;
-    // constructor generates the shader on the fly
-    // ------------------------------------------------------------------------
-    Shader(const std::string vertexPath, const std::string fragmentPath)
+
+    // frag and vert source are absolute path to fs and vs files respectively
+    Shader(std::string vert_source, std::string frag_source)
     {
         // 1. retrieve the vertex/fragment source code from filePath
         std::string vertexCode;
@@ -30,10 +31,9 @@ public:
         fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         try
         {
-
             // open files
-            vShaderFile.open(utility::getDataPath(vertexPath));
-            fShaderFile.open(utility::getDataPath(fragmentPath));
+            vShaderFile.open(vert_source);
+            fShaderFile.open(frag_source);
             std::stringstream vShaderStream, fShaderStream;
             // read file's buffer contents into streams
             vShaderStream << vShaderFile.rdbuf();

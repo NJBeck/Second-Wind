@@ -31,10 +31,11 @@ public:
 
 	// tells handler that this entity no longer uses this image
 	void Remove(EntityID const handle, Image);
-
+	// returns meta data for image
+	ImageMetaData GetImageData(Image);
+	unsigned char* GetImagePtr(Image);
+	// returns the data for all the images registered to the given entity
 	std::vector<ImageMetaData> GetData(EntityID const handle) const;
-
-
 private:
 	// maps the file to what entities reference it
 	// used to manage lifetime of file in memory 

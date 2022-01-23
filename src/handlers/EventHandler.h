@@ -72,12 +72,17 @@ public:
 	QUIT
 };
 	void PollEvents();				// makes the vector of events queue_
-	void Add(EntityID const, Events);	// subscribe entity to event
-	void Remove(EntityID const, Events);	// unsubscribe entity
+	// subscribes given entity to given events
+	void Add(EntityID const, std::vector<Events> const);
+	void Remove(EntityID const, std::vector<Events> const);
+	void ClearEvents();
+	// returns events that have occurred since last checking
 	std::unordered_map<EntityID,
 					   std::vector<Events> > const& GetEvents() const;
 
+
 private:
+	// converts SDL event to our enum
 	Events SDLtoEvent(SDL_Event const) const;
 	// the map of entities which are subscribed to an event
 	std::unordered_map<Events, 

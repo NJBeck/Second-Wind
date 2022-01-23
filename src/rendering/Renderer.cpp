@@ -1,6 +1,7 @@
 // TODO: use uniform to scale quads appropriately
 #include "Renderer.h"
 #include "utility.h"
+#include "handlers/ShaderHandler.hpp"
 
 #include <iostream>
 #include <array>
@@ -8,15 +9,15 @@
 #include <vector>
 #include <tuple>
 
-using namespace std;
+using std::vector, std::tuple, std::get;
 using namespace utility;
 
 #define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 Renderer::Renderer(SDL_Window* w, PositionHandler* ph, 
-                   QuadHandler* qh, AnimationHandler* ah)
+                   QuadHandler* qh, AnimationHandler* ah, ShaderHandler* sh)
     :window(w), pos_handler_(ph), quad_handler_(qh), anim_handler_(ah), 
-    alive(true)
+    alive(true), shader_handler_(sh)
 {
 }
 
@@ -34,18 +35,22 @@ void Renderer::DrawScene()
     auto in_range = pos_handler_->EntitiesInArea(camera_quad);
 
     // vectors to put the quads and positions into
-    vector<tuple<EntityID, PositionHandler::Quad, GLQuadData> > ent_data;
+    vector<tuple<EntityID, PositionHandler::Quad, 
+                 QuadHandler::GLQuadData, Shader> > ent_data;
     for (auto& ent : in_range) {
         // update the animation so the correct quad is selected
         anim_handler_->Update(ent.handle);
         // retrieve data for quads if it has one
-        for (auto& quad : quad_handler_->GetData(ent.handle)) {
-            ent_data.emplace_back(ent.handle, ent.quad, quad);
+        auto GLData = quad_handler_->GetActiveData(ent.handle);
+        if (GLData.texture != 0 || GLData.VAO != 0) {
+            auto ent_shader = shader_handler_->GetShader(ent.handle);
+            ent_data.emplace_back(ent.handle, ent.quad, GLData, ent_shader);
         }
     }
 
     for (uint32_t i = 0; i < ent_data.size(); ++i) {
-        auto quad = get<2>(ent_data[i]);
+        auto ent_shader = get<3>(ent_data[i]);
+        auto GLdata = get<2>(ent_data[i]);
         auto position = get<1>(ent_data[i]);
         auto ent_id = get<0>(ent_data[i]);
         // figure out where on the screen the quad should go
@@ -61,22 +66,22 @@ void Renderer::DrawScene()
         glCheckError();
 
         // bind the quad's texture
-        glBindTexture(GL_TEXTURE_2D, quad.texture);
+        glBindTexture(GL_TEXTURE_2D, GLdata.texture);
         glCheckError();
 
         // use its shader program
-        quad.shaders.use();
+        ent_shader.use();
         glCheckError();
 
-        quad.shaders.setVec2("screenPos", screenX, screenY);
-        quad.shaders.setFloat("scale", scale);
+        ent_shader.setVec2("screenPos", screenX, screenY);
+        ent_shader.setFloat("scale", scale);
 
         // specify the texture unit for the uniform
-        quad.shaders.setInt("texture1", 0);
+        ent_shader.setInt("texture1", 0);
         glCheckError();
 
         // bind the quad's VAO
-        glBindVertexArray(quad.VAO);
+        glBindVertexArray(GLdata.VAO);
         glCheckError();
 
         // enable blending for the alpha

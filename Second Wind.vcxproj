@@ -100,6 +100,7 @@
     <ClInclude Include="src\handlers\MovementHandler.h" />
     <ClInclude Include="src\handlers\PositionHandler.h" />
     <ClInclude Include="src\handlers\QuadHandler.h" />
+    <ClInclude Include="src\handlers\ShaderHandler.hpp" />
     <ClInclude Include="src\rendering\Renderer.h" />
     <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\utility.h" />
@@ -114,6 +115,7 @@
     <ClCompile Include="src\handlers\MovementHandler.cpp" />
     <ClCompile Include="src\handlers\PositionHandler.cpp" />
     <ClCompile Include="src\handlers\QuadHandler.cpp" />
+    <ClCompile Include="src\handlers\ShaderHandler.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\utility.cpp" />
   </ItemGroup>

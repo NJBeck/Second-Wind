@@ -5,9 +5,65 @@
 using std::vector, std::string, std::abs;
 
 AnimationHandler::AnimationHandler(QuadHandler* qh, PositionHandler* ph) :
-	quad_handler_(qh), pos_handler_(ph) {}
+	quad_handler_(qh), pos_handler_(ph) {
+	vector<QuadHandler::QuadParams> params;
+	params.reserve(9);
+	for (int i = 0; i < 9; ++i) {
+		params.emplace_back(ImageHandler::Image::WALK_BODY_MALE, 1, i);
+	}
+	anim_quads_[AnimType::PLAYERWALKDOWN] = params;
+	params.clear();
 
-void AnimationHandler::WalkAnim(EntityID const handle, QuadParams& qp,
+}
+auto AnimationHandler::anim_quads_ = {
+	{AnimationHandler::AnimType::PLAYERWALKDOWN,{
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 0}, 
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 1},
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 2},
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 3},
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 4},
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 5},
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 6},
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 7},
+		{ImageHandler::Image::WALK_BODY_MALE, 1, 8}}
+	},
+	{AnimationHandler::AnimType::PLAYERWALKUP,{
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 0},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 1},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 2},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 3},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 4},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 5},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 6},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 7},
+		{ImageHandler::Image::WALK_BODY_MALE, 3, 8}}
+	},
+	{AnimationHandler::AnimType::PLAYERWALKLEFT,{
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 0},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 1},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 2},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 3},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 4},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 5},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 6},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 7},
+		{ImageHandler::Image::WALK_BODY_MALE, 2, 8}}
+	},
+	{AnimationHandler::AnimType::PLAYERWALKRIGHT,{
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 0},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 1},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 2},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 3},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 4},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 5},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 6},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 7},
+		{ImageHandler::Image::WALK_BODY_MALE, 0, 8}}
+	}
+};
+
+void AnimationHandler::WalkAnim(EntityID const handle, 
+								QuadHandler::QuadParams& qp,
 								double const period, double const new_pos) {
 	// for the walk animation info.previous refers the the spatial distance
 	// through the cycle it was last update
@@ -15,7 +71,7 @@ void AnimationHandler::WalkAnim(EntityID const handle, QuadParams& qp,
 
 	// cycleLen is number of different frames in the animation
 	// we subtract 1 because 0 is the idle animation
-	int const cycleLen = qp.cols - 1;
+	int const cycleLen = 8;
 	// animation selects active quad in row based on how far entity has traveled
 
 	AnimInfo& info = anim_data_[handle];
@@ -49,70 +105,47 @@ void AnimationHandler::WalkAnim(EntityID const handle, QuadParams& qp,
 	}
 }
 
+
 void AnimationHandler::Update(EntityID const handle) {
 	auto found = anim_data_.find(handle);
 	if(found != anim_data_.end()){
 		auto& ent_pos = pos_handler_->GetPos(handle);
 		switch (found->second.active_anim) {
 			case AnimType::PLAYERWALKUP: {
-				QuadParams qp{
-				"walkcycle/BODY_male.png",
-				"quadshader.vs",
-				"quadshader.fs",
-				2 * ent_pos.width,
-				2 * ent_pos.height,
-				3,	//row
-				4,	//rows
-				0,	//column
-				9	//columns
+				QuadHandler::QuadParams qp{
+					ImageHandler::Image::WALK_BODY_MALE,
+					3, // row
+					0  // column
 				};
 				WalkAnim(handle, qp, 4.0, ent_pos.yPos);
 				break;
 			}
 
 			case AnimType::PLAYERWALKDOWN: {
-				QuadParams qp{
-				"walkcycle/BODY_male.png",
-				"quadshader.vs",
-				"quadshader.fs",
-				2 * ent_pos.width,
-				2 * ent_pos.height,
-				1,
-				4,
-				0,
-				9
+				QuadHandler::QuadParams qp{
+					ImageHandler::Image::WALK_BODY_MALE,
+					1,
+					0
 				};
 				WalkAnim(handle, qp, 4.0, ent_pos.yPos);
 				break;
 			}
 
 			case AnimType::PLAYERWALKLEFT: {
-				QuadParams qp{
-				"walkcycle/BODY_male.png",
-				"quadshader.vs",
-				"quadshader.fs",
-				2 * ent_pos.width,
-				2 * ent_pos.height,
-				2,
-				4,
-				0,
-				9
+				QuadHandler::QuadParams qp{
+					ImageHandler::Image::WALK_BODY_MALE,
+					2,
+					0
 				};
 				WalkAnim(handle, qp, 4.0, ent_pos.xPos);
 				break;
 			}
 
 			case AnimType::PLAYERWALKRIGHT: {
-				QuadParams qp{
-				"walkcycle/BODY_male.png",
-				"quadshader.vs",
-				"quadshader.fs",
-				2 * ent_pos.width,
-				2 * ent_pos.height,
-				0,
-				4,
-				0,
-				9
+				QuadHandler::QuadParams qp{
+					ImageHandler::Image::WALK_BODY_MALE,
+					0,
+					0
 				};
 				WalkAnim(handle, qp, 4.0, ent_pos.xPos);
 				break;
@@ -134,6 +167,7 @@ void AnimationHandler::Add(EntityID const handle,
 	if (found != anim_data_.end()) {
 		for (auto& type : types) {
 			found->second.anims.emplace(type);
+			quad_handler_->Add(handle, anim_quads_[type]);
 		}
 		found->second.active_anim = types[0];
 	}

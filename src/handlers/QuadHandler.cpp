@@ -3,13 +3,13 @@
 
 #define glCheckError() utility::glCheckError_(__FILE__, __LINE__) 
 
-using std::string, std::array, std::vector, std::pair;
+using   std::string, std::array, std::vector,
+        std::pair, std::tuple;
 
 void QuadHandler::Add(EntityID const handle, 
                       vector<QuadParams> const& params, 
                       uint32_t activeQuad = 0)
 {
-
     // indices for GLQuadData for the quads of this entity
     vector<uint32_t> QuadIndices;
     QuadIndices.reserve(params.size());
@@ -17,24 +17,33 @@ void QuadHandler::Add(EntityID const handle,
     // for each quad passed in we generate the shaders and buffers etc
     // then we put the data in the maps
     for (auto& param : params) {
-        string image_path = utility::getDataPath(param.image_path);
         // if this quad isn't already in the vector
-        auto alias = aliases.find(param);
-        if (alias == aliases.end()) {
+        tuple<ImageHandler::Image, int, int> param_tuple{   param.image, 
+                                                            param.row, 
+                                                            param.col };
+        auto alias = aliases_.find(param_tuple);
+        if (alias == aliases_.end()) {
 
             // register handle with image
-            img_handler_->Add(handle, image_path);
-            auto& imd = img_handler_->GetImgData(image_path);
+            img_handler_->Add(handle, param.image);
+            auto& imd = img_handler_->GetImageData(param.image);
+            auto img_ptr = img_handler_->GetImagePtr(param.image);
 
-
-
-            // vertex array
+            // vertex array with texture coordinates
             array<float, 16> verts;
             verts = {
-                param.width,	0.0f,	        (float)(param.col + 1) / param.cols,    (float)(param.row) / param.rows,	// bottom right
-                0.0f,	        0.0f,	        (float)(param.col) / param.cols,		(float)(param.row) / param.rows,	// bottom left
-                param.width,    param.height,   (float)(param.col + 1) / param.cols,	(float)(param.row + 1) / param.rows,// top right
-                0.0f,	        param.height,   (float)(param.col) / param.cols,		(float)(param.row + 1) / param.rows	// top left
+                1.0f,	0.0f,	        
+                (float)(param.col + 1) / imd.columns,    
+                (float)(param.row) / imd.rows,	// bottom right
+                0.0f, 0.0f,	        
+                (float)(param.col) / imd.columns,		
+                (float)(param.row) / imd.rows,	// bottom left
+                1.0f, 1.0f,   
+                (float)(param.col + 1) / imd.columns,	
+                (float)(param.row + 1) / imd.rows,// top right
+                0.0f, 1.0f,   
+                (float)(param.col) / imd.columns,		
+                (float)(param.row + 1) / imd.rows	// top left
             };
 
             // generate our buffers/textures objects
@@ -49,14 +58,18 @@ void QuadHandler::Add(EntityID const handle,
 
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glCheckError();
-            glBufferData(GL_ARRAY_BUFFER, sizeof(verts), &verts, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(verts), &verts, 
+                         GL_STATIC_DRAW);
             glCheckError();
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
             // position attribute
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+            glVertexAttribPointer(  0, 2, GL_FLOAT, GL_FALSE, 
+                                    4 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
             glCheckError();
             // texture coord attribute
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), 
+                                  (void*)(2 * sizeof(float)));
             glEnableVertexAttribArray(1);
             glCheckError();
             // configure texture 
@@ -70,43 +83,30 @@ void QuadHandler::Add(EntityID const handle,
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glCheckError();
             // set texture filtering parameters
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+                            GL_LINEAR_MIPMAP_LINEAR);
             glCheckError();
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glCheckError();
             // load textures and generate mipmaps
             if (imd.channels == 3) {
-                //glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, 
-                //GLsizei height, GLint border, GLenum format, GLenum type, const void* data);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imd.width, imd.height, 0, GL_RGB, GL_UNSIGNED_BYTE, imd.dataPtr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imd.width, imd.height, 
+                             0, GL_RGB, GL_UNSIGNED_BYTE, img_ptr);
                 glCheckError();
                 glGenerateMipmap(GL_TEXTURE_2D);
                 glCheckError();
             }
             else {
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imd.width, imd.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imd.dataPtr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imd.width, imd.height, 
+                             0, GL_RGBA, GL_UNSIGNED_BYTE, img_ptr);
                 glCheckError();
                 glGenerateMipmap(GL_TEXTURE_2D);
                 glCheckError();
             }
-            // check if the shader for this quad has already been created
-            string const src = param.vertsource + param.fragsource;
-            auto shaderPtr = shaderIDs.find(src);
-            if (shaderPtr == shaderIDs.end()) {
-                auto vertsource = utility::getDataPath(param.vertsource);
-                auto fragsource = utility::getDataPath(param.fragsource);
-                Shader quadshader(vertsource, fragsource );
-                shaderIDs.emplace(src, quadshader);
-                GLQuadData glqd = { quadshader , texture, VAO, VBO, EBO };
-                data.push_back(glqd);
-            }
-            else {
-                GLQuadData glqd = { shaderPtr->second , texture, VAO, VBO, EBO };
-                data.push_back(glqd);
-            }
-            QuadIndices.push_back(data.size() - 1);
-            aliases[param] = data.size() - 1;
+            GLdata_.emplace_back(param.image, param.row, param.col);
+            QuadIndices.push_back(GLdata_.size() - 1);
+            aliases_[param_tuple] = GLdata_.size() - 1;
         }
         else {
             // if the quad was already in data then just push the index
@@ -114,18 +114,18 @@ void QuadHandler::Add(EntityID const handle,
         }
 
     }
-    pair<uint32_t, vector<uint32_t>> _pair = { activeQuad, QuadIndices };
-    Index[handle] = _pair;
-
+    index_[handle] = { activeQuad, QuadIndices };
 }
 
-vector<GLQuadData> QuadHandler::GetData(EntityID const handle){
-    vector<GLQuadData> quaddata;
-    auto found = Index.find(handle);
-    if (found != Index.end()) {
-        quaddata.emplace_back(data[found->second.first]);
+QuadHandler::GLQuadData
+QuadHandler::GetActiveData(EntityID const handle) const{
+    auto found = index_.find(handle);
+    if (found != index_.end()) {
+        return GLdata_[found->second.first];
     }
-    return quaddata;
+    else {
+        return { 0, 0 };
+    }
 }
 
 QuadHandler::QuadHandler(ImageHandler* imh): img_handler_(imh)
@@ -139,34 +139,27 @@ QuadHandler::QuadHandler(ImageHandler* imh): img_handler_(imh)
     glCheckError();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glCheckError();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), 
+                 &indices, GL_STATIC_DRAW);
     glCheckError();
 }
 
 
-void QuadHandler::SetActive(EntityID const handle, QuadParams const& params) {
-    auto const alias = aliases.find(params);
-    if (alias != aliases.end()) {
-        Index[handle].first = alias->second;
+void QuadHandler::SetActive(EntityID const handle, 
+                            QuadParams const& params) {
+    auto const alias = aliases_.find(params.GetTuple());
+    if (alias != aliases_.end()) {
+        index_[handle].first = alias->second;
     }
-    // might want to do some logging if it's not found
+    else {
+        string err{ "entity " + std::to_string(handle) + 
+                    " not found in QuadHandler when setting active" };
+        throw std::runtime_error(err);
+    }
 }
 
-bool operator==(const QuadParams& lhs, const QuadParams& rhs) {
-    if (
-        lhs.image_path == rhs.image_path &&
-        lhs.vertsource == rhs.vertsource &&
-        lhs.fragsource == rhs.fragsource &&
-        lhs.width == rhs.width &&
-        lhs.height == rhs.height &&
-        lhs.row == rhs.row &&
-        lhs.rows == rhs.rows &&
-        lhs.col == rhs.col &&
-        lhs.cols == rhs.cols
-        ) {
-        return true;
-    }
-    else return false;
-
+tuple<ImageHandler::Image, int, int> QuadHandler::QuadParams::GetTuple() const
+{
+    tuple<ImageHandler::Image, int, int> tup{ image, row, col };
+    return tup;
 }
-
