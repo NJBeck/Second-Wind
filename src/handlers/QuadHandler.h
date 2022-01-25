@@ -52,7 +52,8 @@ private:
 	using QuadParamTuple = std::tuple<ImageHandler::Image, int, int>;
 	std::unordered_map<	QuadParamTuple, uint32_t, 
 						utility::TupleHash<QuadParamTuple>> aliases_;
-
+	// stores the GLuint for already generated textures
+	std::unordered_map<ImageHandler::Image, GLuint> textures_;
 	GLuint EBO;	// all quads use the same EBO
 	ImageHandler* img_handler_;
 };

@@ -2,20 +2,14 @@
 #include "globals.h"
 
 #include <cmath>
-using std::vector, std::string, std::abs;
+using std::vector, std::string, std::abs, std::unordered_map;
 
 AnimationHandler::AnimationHandler(QuadHandler* qh, PositionHandler* ph) :
-	quad_handler_(qh), pos_handler_(ph) {
-	vector<QuadHandler::QuadParams> params;
-	params.reserve(9);
-	for (int i = 0; i < 9; ++i) {
-		params.emplace_back(ImageHandler::Image::WALK_BODY_MALE, 1, i);
-	}
-	anim_quads_[AnimType::PLAYERWALKDOWN] = params;
-	params.clear();
+	quad_handler_(qh), pos_handler_(ph) {}
 
-}
-auto AnimationHandler::anim_quads_ = {
+const unordered_map<AnimationHandler::AnimType,
+					vector<QuadHandler::QuadParams>> 
+	AnimationHandler::anim_quads_ = {
 	{AnimationHandler::AnimType::PLAYERWALKDOWN,{
 		{ImageHandler::Image::WALK_BODY_MALE, 1, 0}, 
 		{ImageHandler::Image::WALK_BODY_MALE, 1, 1},
@@ -167,7 +161,7 @@ void AnimationHandler::Add(EntityID const handle,
 	if (found != anim_data_.end()) {
 		for (auto& type : types) {
 			found->second.anims.emplace(type);
-			quad_handler_->Add(handle, anim_quads_[type]);
+			quad_handler_->Add(handle, anim_quads_.at(type));
 		}
 		found->second.active_anim = types[0];
 	}

@@ -8,13 +8,13 @@ using   std::string, std::array, std::vector,
 
 void QuadHandler::Add(EntityID const handle, 
                       vector<QuadParams> const& params, 
-                      uint32_t activeQuad = 0)
+                      uint32_t activeQuad)
 {
     // indices for GLQuadData for the quads of this entity
     vector<uint32_t> QuadIndices;
     QuadIndices.reserve(params.size());
 
-    // for each quad passed in we generate the shaders and buffers etc
+    // for each quad passed in we generate the buffers
     // then we put the data in the maps
     for (auto& param : params) {
         // if this quad isn't already in the vector
@@ -104,7 +104,7 @@ void QuadHandler::Add(EntityID const handle,
                 glGenerateMipmap(GL_TEXTURE_2D);
                 glCheckError();
             }
-            GLdata_.emplace_back(param.image, param.row, param.col);
+            GLdata_.push_back({ texture, VAO });
             QuadIndices.push_back(GLdata_.size() - 1);
             aliases_[param_tuple] = GLdata_.size() - 1;
         }

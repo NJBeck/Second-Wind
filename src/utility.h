@@ -20,7 +20,7 @@ namespace utility {
     class TupleHash;
 
     template<typename... TTypes>
-    class TupleHash<tuple<TTypes...>>
+    class TupleHash<std::tuple<TTypes...>>
     {
     private:
         typedef std::tuple<TTypes...> TTuple;
