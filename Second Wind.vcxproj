@@ -21,13 +21,13 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -97,7 +97,6 @@
     <ClInclude Include="src\handlers\EntityHandler.h" />
     <ClInclude Include="src\handlers\EventHandler.h" />
     <ClInclude Include="src\handlers\ImageHandler.h" />
-    <ClInclude Include="src\handlers\MovementHandler.h" />
     <ClInclude Include="src\handlers\PositionHandler.h" />
     <ClInclude Include="src\handlers\QuadHandler.h" />
     <ClInclude Include="src\handlers\ShaderHandler.hpp" />

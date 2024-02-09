@@ -1,6 +1,7 @@
 #pragma once
 // decides when to select which quad to be actively drawn for an entity
 
+// TODO: make AnimInfo more general than for just quads
 #include "QuadHandler.h"
 #include "PositionHandler.h"
 
@@ -23,7 +24,7 @@ class AnimationHandler {
 	struct AnimInfo {
 		std::unordered_set<AnimType> anims;	// animations this entity has
 		AnimType active_anim;				// the active animation
-		uint32_t active_quad;				// index of active quad of in the cycle
+		u32 active_quad;				// index of active quad of in the cycle
 		// animation implementation defined state values
 		double previous;					// the previous state of the animation
 		double state;						// the progress through the animation
@@ -39,7 +40,9 @@ class AnimationHandler {
 	void Add(EntityID const, std::vector<AnimType> const);
 	void Remove(EntityID const, std::vector<AnimType> const);
 
-	AnimationHandler(QuadHandler*, PositionHandler*);
+	AnimationHandler(	std::shared_ptr<QuadHandler> qh, 
+						std::shared_ptr<PositionHandler> ph) 
+						: quad_handler_(qh), pos_handler_(ph) {}
 
 private:
 	// maps an animation to its quad parameters
@@ -53,7 +56,7 @@ private:
 	void WalkAnim(EntityID const, QuadHandler::QuadParams&, 
 			      double const period, double const new_pos);
 
-	QuadHandler* quad_handler_;
-	PositionHandler* pos_handler_;
+	std::shared_ptr<QuadHandler> quad_handler_;
+	std::shared_ptr<PositionHandler> pos_handler_;
 };
 

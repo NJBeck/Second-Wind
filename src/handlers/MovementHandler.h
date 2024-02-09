@@ -2,24 +2,18 @@
 #include "PositionHandler.h"
 #include "utility.h"
 
-#include <unordered_map>
-
-// data for direction and speed of entity
-struct Velocity {
-	double xVector;
-	double yVector;
-};
 
 class MovementHandler
 {
-	// map for currently moving objects
-	std::unordered_map<EntityID, Velocity> velocities_;
-	Timer* timer_;
+	typedef glm::vec3 Velocity;
+	std::unordered_map<EntityID, Velocity> index_;
+	std::unique_ptr<Timer>& timer_;
+	std::unique_ptr<PositionHandler>& pos_handler_;
 public:
-	PositionHandler* pos_handler_;
-	MovementHandler(PositionHandler*, Timer*);
-	// register and entity with a given Velocity
-	void Add(uint64_t const handle, Velocity vec = { 0, 0 });
+	MovementHandler(std::unique_ptr<PositionHandler>& ph, std::unique_ptr<Timer>& tm):
+		timer_(tm), pos_handler_(ph){}
+	// glm vec3 are zero initialized
+	void Add(EntityID const, Velocity const);
 	// add xVelocity and yVelocity to entity
 	void AddVelocity(EntityID const, Velocity const);
 	// sets the Velocity of entity
@@ -27,6 +21,6 @@ public:
 	// remove an entity from this system
 	void Remove(EntityID const handle);
 	// update all the positions of moving objects based on their velocities
-	void Update() const;
+	void Update();
 };
 

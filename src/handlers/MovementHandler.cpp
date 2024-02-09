@@ -5,53 +5,43 @@
 #include <string>
 #include <stdexcept>
 
-using namespace std;
 
-MovementHandler::MovementHandler(PositionHandler* ph, Timer* t)
-	: pos_handler_(ph), timer_(t)
-{}
-
-void MovementHandler::Add(uint64_t handle, Velocity vector)
+void MovementHandler::Add(EntityID handle, Velocity vector)
 {
-	velocities_[handle] = vector;
+	index_[handle] = vector;
 }
 void MovementHandler::AddVelocity(EntityID const handle, 
 								  Velocity const vec) {
-	auto it = velocities_.find(handle);
-	if (it != velocities_.end()) {
-		Velocity& ent_vector = velocities_[handle];
-		ent_vector.xVector += vec.xVector;
-		ent_vector.yVector += vec.yVector;
-	}
-	else {
-		string err = handle + " not found when trying to add Velocity";
-		throw runtime_error(err);
-	}
-
-	
+	index_[handle] += vec;
 }
 
 void MovementHandler::SetVelocity(EntityID const handle,
 								  Velocity const vec)
 {
-	velocities_[handle] = { vec.xVector, vec.yVector };
+	index_[handle] = vec;
 }
 
 void MovementHandler::Remove(EntityID const handle)
 {
-	velocities_.erase(handle);
+	auto found = index_.find(handle);
+	if (found == index_.end()) {
+		utility::Log("MovementHandler", "removing entity", "not in handler");
+	}
+	else {
+		index_.erase(found);
+	}
+
 }
 
-void MovementHandler::Update() const
+void MovementHandler::Update()
 {
 	float timestep = timer_->lastFrameTime() / 1000;
-	for (auto& ent_vector : velocities_) {
-		double const& xvel = ent_vector.second.xVector;
-		double const& yvel = ent_vector.second.yVector;
-		double x_displace = xvel * timestep;
-		double y_displace = yvel * timestep;
-
-		pos_handler_->Move(ent_vector.first, { x_displace, y_displace });
+	for (auto& ent_ : index_) {
+		Velocity& ent_vec = ent_.second;
+		Dir displacement = ent_vec * timestep;
+		ent_vec += displacement;
+		// update the position
+		pos_handler_->Move(ent_.first, displacement);
 
 	}
 }

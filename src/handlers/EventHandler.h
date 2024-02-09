@@ -1,8 +1,7 @@
 #pragma once
-// TODO: add EntityManager to handle entities and their events (should take care of this nasty pointer business)
 
 #include "SDL2/SDL.h"
-#include <vector>
+#include <deque>
 #include <unordered_map>
 #include <utility>
 #include <unordered_set>
@@ -71,25 +70,29 @@ public:
 	KU_ESC,
 	QUIT
 };
-	void PollEvents();				// makes the vector of events queue_
+	typedef std::deque<Events> EventQueue;
+	typedef std::unordered_set<Events> EventSet;
 	// subscribes given entity to given events
-	void Add(EntityID const, std::vector<Events> const);
-	void Remove(EntityID const, std::vector<Events> const);
+	void Add(EntityID const, EventSet const);
+	void Remove(EntityID const, EventSet const);
+	// populates the notifications
+	void PollEvents();
+	// clears events for all entities
 	void ClearEvents();
-	// returns events that have occurred since last checking
-	std::unordered_map<EntityID,
-					   std::vector<Events> > const& GetEvents() const;
-
+	// clears the notifications for the given entity
+	void ClearNotifications(EntityID const);
+	// returns events this entity is sub'd to that have occurred since last checking
+	EventQueue const Notifications(EntityID const) const;
 
 private:
-	// converts SDL event to our enum
-	Events SDLtoEvent(SDL_Event const) const;
+	std::unordered_map<EntityID, EventSet> index_;
 	// the map of entities which are subscribed to an event
-	std::unordered_map<Events, 
+	std::unordered_map<Events,
 					   std::unordered_set<EntityID> > subscriptions_;
 	// maps entities to their notifications
-	std::unordered_map<EntityID, 
-					   std::vector<Events> > notifications_;
-	// the events get dispatched from a queue
-	std::vector<Events> queue_;
+	std::unordered_map<	EntityID, 
+						EventQueue > notifications_;
+	// converts SDL event to our enum
+	Events SDLtoEvent(SDL_Event const) const;
+
 };

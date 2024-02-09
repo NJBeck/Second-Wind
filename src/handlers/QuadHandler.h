@@ -1,59 +1,63 @@
 #pragma once
-// packages some image data, screen space and shaders into 1 object
-
-// TODO:	handle entity deletion/garbage collection (probably use min heap of open indices)
 
 #include <string>
 #include <utility>
 #include <unordered_map>
-#include <tuple>
+#include <unordered_set>
+#include <memory>
+#include <array>
 
 #include "rendering/shader.h"
 #include "ImageHandler.h"
+#include "globals.h"
 #include "utility.h"
-
-
 
 class QuadHandler
 {
 public:
-	// parameters to generate a quad
-	struct QuadParams {
-		ImageHandler::Image image;
-		int row;	// row of quad's texture in image
-		int col;
-		std::tuple<ImageHandler::Image, int, int> GetTuple() const;
-	};
 
-	// the data necessary to draw the quad (other than the image itself)
+	// the data necessary to draw the quad
 	struct GLQuadData {
 		GLuint texture;		// texture ID
 		GLuint VAO;			// vertex array object for quad
 	};
-
+	// Image, rows, column of quad in image
+	struct QuadParams {
+		ImageHandler::Image image;
+		u32 rows;
+		u32 columns;
+	};
 	// sets the active quad for the entity
 	void SetActive(EntityID const, QuadParams const&);
 	// generates textures and buffers and associates sets of quads with entity
 	// first quad is the active quad by default
-	void Add(EntityID const, std::vector<QuadParams>const &, 
-							 uint32_t const activeQuad = 0);
+	void Add(EntityID const, std::vector<QuadParams> const&);
+	// remember to add new active if removing active quad from entity
+	void Remove(EntityID const, std::vector<QuadParams> const&);
 	// returns GLQuadData for that animation state of that quad
-	GLQuadData GetActiveData(EntityID const handle) const;
+	GLQuadData const GetActiveData(EntityID const handle) const;
 
-	QuadHandler(ImageHandler*);
+	QuadHandler(std::shared_ptr<ImageHandler> image_handler);
 private:
-	// data to draw a quad
-	std::vector<GLQuadData> GLdata_;
-	// maps an entity to a vector of indices for each quad it has
-	// and the index of the active quad
-	std::unordered_map<EntityID, std::pair<uint32_t,
-										   std::vector<uint32_t>>> index_;
-	// maps a quad to its index in GLdata_ to see if it's already in data		
-	using QuadParamTuple = std::tuple<ImageHandler::Image, int, int>;
-	std::unordered_map<	QuadParamTuple, uint32_t, 
-						utility::TupleHash<QuadParamTuple>> aliases_;
-	// stores the GLuint for already generated textures
-	std::unordered_map<ImageHandler::Image, GLuint> textures_;
-	GLuint EBO;	// all quads use the same EBO
-	ImageHandler* img_handler_;
+	//// pairs an entity's active VAO + Image with the set of all of them
+	struct ImageVAOs {
+		ImageHandler::Image active_image;
+		std::unordered_set<ImageHandler::Image> image_set;
+		u32 active_VAO;
+		std::unordered_set<u32> VAO_set;
+	};
+	std::unordered_map<EntityID, ImageVAOs> index_;
+
+	GLuint EBO_;	// all quads use the same Element buffer
+	std::shared_ptr<ImageHandler> image_handler_;
+
+	// stores the matrices of the VAO VBO and count of entity's referencing it
+	// for the row x column of a texture/image
+	struct QuadData {
+		u32 VAO;
+		u32 VBO;
+		u32 count;
+	};
+	static std::array<	std::unique_ptr<MatrixBase<QuadData>>, 
+						static_cast<u32>(ImageHandler::Image::COUNT)> quad_mats_;
 };

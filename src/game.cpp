@@ -9,19 +9,19 @@
 int main(int argc, char* args[]) {
     SDL_Window* window = NULL;
     utility::InitGL(&window, 1280, 720);
-    Timer global_timer;
-    ImageHandler img_handler;
-    QuadHandler quad_handler(&img_handler);
+    auto global_timer = std::make_unique<Timer>();
+    auto img_handler = std::make_unique<ImageHandler>();
+    auto quad_handler = std::make_unique<QuadHandler>(img_handler);
     PositionHandler::Quad map_boundaries;
     map_boundaries.width = (long)1 << 20;
     map_boundaries.height = map_boundaries.width;
     map_boundaries.xPos = -1 * map_boundaries.width / 2;  // bottom left corner
     map_boundaries.yPos = map_boundaries.xPos;
-    PositionHandler pos_handler(map_boundaries);
-    AnimationHandler anim_handler(&quad_handler, &pos_handler);
-    MovementHandler move_handler(&pos_handler, &global_timer);
-    ShaderHandler shader_handler;
-    Renderer renderer(window, &pos_handler, &quad_handler, 
+    auto pos_handler = std::make_unique<PositionHandler>(map_boundaries);
+    auto anim_handler = std::make_unique<AnimationHandler>(quad_handler, pos_handler);
+    auto move_handler = std::make_unique<MovementHandler>(pos_handler, global_timer);
+    auto shader_handler = std::make_unique<ShaderHandler>();
+    auto renderer = std::make_unique<Renderer>(window, &pos_handler, &quad_handler, 
                       &anim_handler, &shader_handler);
     renderer.AddCamera({{ 0.0, 0.0, 16.0, 9.0 }, 1280, 720});
     EventHandler event_handler;

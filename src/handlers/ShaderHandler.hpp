@@ -1,41 +1,61 @@
 #pragma once
+//  TODO: implement deletion, add more logging/error checking
 #include "../rendering/shader.h"
 #include "../utility.h"
 #include "globals.h"
 
 #include <unordered_map>
-#include <tuple>
+#include <unordered_set>
 #include <string>
 
 
 class ShaderHandler {
 
 public:
-    enum class VertexShaders {
-        Quad
+
+    enum class VertexShader {
+        NONE,
+        QUAD
     };
-    enum class FragmentShaders {
-        Quad
+    enum class FragmentShader {
+        NONE,
+        QUAD
     };
-    // vertex then fragment shader then entity handle to register them to
-    void Add(VertexShaders vs, FragmentShaders fs, EntityID);
-    void Remove(EntityID handle);
-    Shader GetShader(EntityID handle);
+    enum class ShaderType {
+        VERTEX,
+        FRAGMENT
+    };
+
+    void Add(EntityID const, VertexShader const, FragmentShader const);
+    void Remove(EntityID const, VertexShader const, FragmentShader const);
+    // sets the active shaders for entity to given and compiles program if not already
+    void SetActiveShader(EntityID const, VertexShader const, FragmentShader const);
+    GLuint GetActiveProgram(EntityID const handle);
 private:
-    std::string GetFragShaderPath(FragmentShaders frag);
-    std::string GetVertShaderPath(VertexShaders vs);
+    std::string GetFragShaderPath(FragmentShader frag);
+    std::string GetVertShaderPath(VertexShader vs);
 
-    Shader MakeNewShader(VertexShaders vs, FragmentShaders fs);
+    // select the type of shader and the enum of the file
+    GLuint MakeNewShader(ShaderType const type, u32 const enum_value);
+    void DeleteShader(ShaderType const type, u32 const enum_value) {};
+    void CheckCompileErrors(GLuint shader, std::string type);
 
-    using ShaderTuple = std::tuple<ShaderHandler::VertexShaders,
-                                   ShaderHandler::FragmentShaders>;
-    // stores already compiled shaders for a given vertex+fragment pair
-    // maps to a shader and the count of entities using this shader
-    std::unordered_map<ShaderTuple, std::tuple<uint32_t, Shader>,
-                       utility::TupleHash<ShaderTuple>> shaders_;
-    // stores which shader to use for each entity
-    using ShaderIDTuple = std::tuple<ShaderHandler::VertexShaders,
-                                     ShaderHandler::FragmentShaders, Shader>;
-    std::unordered_map<EntityID, ShaderIDTuple> entity_shaders_;
+    // stores GLuint of shader/program and reference count
+    struct IDCount{
+        u32 ID = 0;
+        u32 count = 0;
+    };
+    std::unordered_map<VertexShader, IDCount> vertex_shaders_;  
+    std::unordered_map<FragmentShader, IDCount> fragment_shaders_;
+    // [vertex][fragment] = IDCount of linked program
+    Matrix<IDCount> program_matrix_; 
+
+    struct EntityData {
+        ShaderHandler::VertexShader active_vertex_shader; 
+        std::unordered_set<ShaderHandler::VertexShader> vertex_shaders;
+        ShaderHandler::FragmentShader active_fragment_shader;
+        std::unordered_set<ShaderHandler::FragmentShader> fragment_shaders;
+    };
+    std::unordered_map<EntityID, EntityData> index_;
 
 };

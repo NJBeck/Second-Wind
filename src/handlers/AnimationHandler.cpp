@@ -4,9 +4,6 @@
 #include <cmath>
 using std::vector, std::string, std::abs, std::unordered_map;
 
-AnimationHandler::AnimationHandler(QuadHandler* qh, PositionHandler* ph) :
-	quad_handler_(qh), pos_handler_(ph) {}
-
 const unordered_map<AnimationHandler::AnimType,
 					vector<QuadHandler::QuadParams>> 
 	AnimationHandler::anim_quads_ = {
@@ -94,7 +91,7 @@ void AnimationHandler::WalkAnim(EntityID const handle,
 	}
 
 	if (prevActive != info.active_quad) {
-		qp.col = info.active_quad;
+		qp.columns = info.active_quad;
 		quad_handler_->SetActive(handle, qp); // sets this one to the active quad
 	}
 }
