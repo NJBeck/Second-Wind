@@ -1,0 +1,3 @@
+[submodule "include/ManagedContainer"]
+	path = include/ManagedContainer
+	url = https://github.com/NJBeck/ManagedContainer.git
