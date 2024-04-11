@@ -89,15 +89,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\globals.h" />
-    <ClInclude Include="src\handlers\AnimationHandler.h" />
-    <ClInclude Include="src\handlers\EntityHandler.h" />
-    <ClInclude Include="src\handlers\EventHandler.h" />
-    <ClInclude Include="src\handlers\ImageHandler.h" />
-    <ClInclude Include="src\handlers\MovementHandler.h" />
     <ClInclude Include="src\handlers\PositionHandler.h" />
-    <ClInclude Include="src\handlers\QuadHandler.h" />
-    <ClInclude Include="src\rendering\Renderer.h" />
-    <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\utility.h" />
     <ClInclude Include="test\gtest\gtest-death-test.h" />
     <ClInclude Include="test\gtest\gtest-matchers.h" />
@@ -124,14 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\glad\glad.c" />
-    <ClCompile Include="src\handlers\AnimationHandler.cpp" />
-    <ClCompile Include="src\handlers\EntityHandler.cpp" />
-    <ClCompile Include="src\handlers\EventHandler.cpp" />
-    <ClCompile Include="src\handlers\ImageHandler.cpp" />
-    <ClCompile Include="src\handlers\MovementHandler.cpp" />
     <ClCompile Include="src\handlers\PositionHandler.cpp" />
-    <ClCompile Include="src\handlers\QuadHandler.cpp" />
-    <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\utility.cpp" />
     <ClCompile Include="test\test.cpp" />
   </ItemGroup>

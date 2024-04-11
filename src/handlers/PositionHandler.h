@@ -42,6 +42,8 @@ public:
 
 	void Move(EntityID const, Dir const);
 
+	Box GetEntityBox(EntityID const) const;
+
 	PositionHandler();
 private:
 	Box boundaries_;	// boundaries of the map

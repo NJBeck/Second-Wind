@@ -1,51 +1,56 @@
 
 #include <vector>
-#include <random>
-#include <algorithm>
-
-#include "gtest/gtest.h"
 
 #include "globals.h"
+#include "gtest/gtest.h"
+#include <cstdlib>
 
-using std::vector, std::uniform_real_distribution, std::uniform_int_distribution, std::default_random_engine, std::is_sorted;
+#include "handlers/PositionHandler.h"
 
-namespace {
-
-    class PosTest : public ::testing::Test {
-        // generate num randomly distributed entities with positions
-        // test that they are properly sorted
-    protected:
-        PosTest() {
-            _entities.reserve(num);
-            for (unsigned i = 0; i < num; ++i) { _entities.emplace_back(entity()); }
-            uniform_real_distribution<double> unifDouble(lower, upper);
-            default_random_engine re;
-
-            for (auto& ent: _entities) {
-                Pos entPos = { unifDouble(re), unifDouble(re) };
-
-                globals::posHandler.add(ent.handle, entPos);
-            }
-        }
-        vector<entity> _entities;
-    public:
-        unsigned int num = 10000;
-        double lower = -10000.0;
-        double upper = 10000.0;
-    };
-
-    TEST_F(PosTest, sorted) {
-        // get the entities sorted by decreasing Y value in range
-        vector<unsigned long> sortedEntities = globals::posHandler.InRange(lower, upper, lower, upper);
-        // put their y position values into a vector to test if they are in fact sorted
-        vector<Pos> sortedPos;
-        sortedPos.reserve(num);
-        for (auto& ent : sortedEntities) {
-            sortedPos.push_back(globals::posHandler.GetPos(ent));
-        }
-        EXPECT_TRUE(is_sorted(sortedPos.begin(), sortedPos.end(), [](Pos const& lhs, Pos const& rhs) { return lhs.yPos > rhs.yPos; }));
+class PositionHandlerTest : public ::testing::Test {
+protected:
+    // Helper function to generate a random float in a given range
+    float RandomFloat(float min, float max) {
+        return  min + static_cast<float>(rand()) / 
+                (static_cast<float>(RAND_MAX / (max - min)));
     }
 
+    glm::vec3 RandomVec3(float min, float max) {
+        return { RandomFloat(min,  max), RandomFloat(min,  max), RandomFloat(min,  max) };
+    }
+
+};
+
+TEST_F(PositionHandlerTest, AddAndGetPositionsTest) {
+    PositionHandler position_handler;  // Use the mock for testing
+
+    std::vector<PositionHandler::Box> boxes;
+
+    // Seed the random number generator
+    srand(static_cast<unsigned>(time(0)));
+
+    for (int i = 0; i < 100; ++i) {
+        PositionHandler::Box mock_box;
+        mock_box.pos = RandomVec3(-10, 10);
+        mock_box.dims = RandomVec3(-10, 10);
+        // use dir to store movement vector
+        mock_box.dir = RandomVec3(-10, 10);
+
+        position_handler.Add(i, mock_box);
+        position_handler.Move(i, mock_box.dir);
+
+        boxes.push_back(mock_box);
+    }
+    
+    for (int i = 0; i < 100; ++i) {
+        PositionHandler::Box retrieved_box = position_handler.GetEntityBox(i);
+        auto& old_box = boxes[i];
+        old_box.pos += old_box.dir;
+        
+        EXPECT_NEAR(retrieved_box.pos.x, old_box.pos.x, 0.001);
+        EXPECT_NEAR(retrieved_box.pos.y, old_box.pos.y, 0.001);
+        EXPECT_NEAR(retrieved_box.pos.z, old_box.pos.z, 0.001);
+    }
 }
 
 int main(int argc, char** argv) {

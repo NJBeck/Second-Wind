@@ -37,7 +37,7 @@ public:
 	// returns GLQuadData for that animation state of that quad
 	GLQuadData const GetActiveData(EntityID const handle) const;
 
-	QuadHandler(std::shared_ptr<ImageHandler> image_handler);
+	QuadHandler(ImageHandler& image_handler);
 private:
 	//// pairs an entity's active VAO + Image with the set of all of them
 	struct ImageVAOs {
@@ -49,7 +49,7 @@ private:
 	std::unordered_map<EntityID, ImageVAOs> index_;
 
 	GLuint EBO_;	// all quads use the same Element buffer
-	std::shared_ptr<ImageHandler> image_handler_;
+	ImageHandler& image_handler_;
 
 	// stores the matrices of the VAO VBO and count of entity's referencing it
 	// for the row x column of a texture/image

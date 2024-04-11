@@ -10,7 +10,7 @@
 
 class EventHandler {
 public:
-	enum class Events {
+	enum class Event {
 	KD_A, // keydown events
 	KD_B,
 	KD_C,
@@ -70,8 +70,8 @@ public:
 	KU_ESC,
 	QUIT
 };
-	typedef std::deque<Events> EventQueue;
-	typedef std::unordered_set<Events> EventSet;
+	typedef std::deque<Event> EventQueue;
+	typedef std::unordered_set<Event> EventSet;
 	// subscribes given entity to given events
 	void Add(EntityID const, EventSet const);
 	void Remove(EntityID const, EventSet const);
@@ -87,12 +87,12 @@ public:
 private:
 	std::unordered_map<EntityID, EventSet> index_;
 	// the map of entities which are subscribed to an event
-	std::unordered_map<Events,
+	std::unordered_map<Event,
 					   std::unordered_set<EntityID> > subscriptions_;
 	// maps entities to their notifications
 	std::unordered_map<	EntityID, 
 						EventQueue > notifications_;
 	// converts SDL event to our enum
-	Events SDLtoEvent(SDL_Event const) const;
+	Event SDLtoEvent(SDL_Event const) const;
 
 };

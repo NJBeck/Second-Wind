@@ -92,7 +92,7 @@ void AnimationHandler::WalkAnim(EntityID const handle,
 
 	if (prevActive != info.active_quad) {
 		qp.columns = info.active_quad;
-		quad_handler_->SetActive(handle, qp); // sets this one to the active quad
+		quad_handler_.SetActive(handle, qp); // sets this one to the active quad
 	}
 }
 
@@ -100,7 +100,7 @@ void AnimationHandler::WalkAnim(EntityID const handle,
 void AnimationHandler::Update(EntityID const handle) {
 	auto found = anim_data_.find(handle);
 	if(found != anim_data_.end()){
-		auto& ent_pos = pos_handler_->GetPos(handle);
+		auto& ent_pos = pos_handler_.GetEntityBox(handle).pos;
 		switch (found->second.active_anim) {
 			case AnimType::PLAYERWALKUP: {
 				QuadHandler::QuadParams qp{
@@ -108,7 +108,7 @@ void AnimationHandler::Update(EntityID const handle) {
 					3, // row
 					0  // column
 				};
-				WalkAnim(handle, qp, 4.0, ent_pos.yPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.y);
 				break;
 			}
 
@@ -118,7 +118,7 @@ void AnimationHandler::Update(EntityID const handle) {
 					1,
 					0
 				};
-				WalkAnim(handle, qp, 4.0, ent_pos.yPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.y);
 				break;
 			}
 
@@ -128,7 +128,7 @@ void AnimationHandler::Update(EntityID const handle) {
 					2,
 					0
 				};
-				WalkAnim(handle, qp, 4.0, ent_pos.xPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.x);
 				break;
 			}
 
@@ -138,7 +138,7 @@ void AnimationHandler::Update(EntityID const handle) {
 					0,
 					0
 				};
-				WalkAnim(handle, qp, 4.0, ent_pos.xPos);
+				WalkAnim(handle, qp, 4.0, ent_pos.x);
 				break;
 			}
 		}
@@ -158,7 +158,7 @@ void AnimationHandler::Add(EntityID const handle,
 	if (found != anim_data_.end()) {
 		for (auto& type : types) {
 			found->second.anims.emplace(type);
-			quad_handler_->Add(handle, anim_quads_.at(type));
+			quad_handler_.Add(handle, anim_quads_.at(type));
 		}
 		found->second.active_anim = types[0];
 	}

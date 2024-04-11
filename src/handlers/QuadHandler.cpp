@@ -13,14 +13,14 @@ void QuadHandler::Add(EntityID const handle,
     for (auto& img : params) {
         imgs.push_back(img.image);
     }
-    image_handler_->Add(handle, imgs);
+    image_handler_.Add(handle, imgs);
 
     for (auto& param : params) {
         auto& mat = quad_mats_[static_cast<u32>(param.image)]
                         ->operator()(param.rows, param.columns);
         // if quad doesnt have a VAO then make one
         if (mat.count == 0) {
-            auto& img_data = image_handler_->GetImageData(param.image);
+            auto& img_data = image_handler_.GetImageData(param.image);
             // vertex array with texture coordinates
             array<float, 16> verts;
             verts = {
@@ -104,7 +104,7 @@ QuadHandler::GetActiveData(EntityID const handle) const{
     if (found_iter != index_.end()) {
         auto found_data = found_iter->second;
         ent_data.VAO = found_data.active_VAO;
-        ent_data.texture = image_handler_->GetImageData(found_data.image).ID;
+        ent_data.texture = image_handler_.GetImageData(found_data.active_image).ID;
         return ent_data;
     }
     else {
@@ -114,7 +114,7 @@ QuadHandler::GetActiveData(EntityID const handle) const{
     }
 }
 
-QuadHandler::QuadHandler(shared_ptr<ImageHandler> image_handler)
+QuadHandler::QuadHandler(ImageHandler& image_handler)
     : image_handler_(image_handler)
 {
     // index array
@@ -129,7 +129,7 @@ QuadHandler::QuadHandler(shared_ptr<ImageHandler> image_handler)
     glCheckError();
 
     // construct matrices to store the data for each sprite in use
-    for (auto& img_data : image_handler_->image_data) {
+    for (auto& img_data : image_handler_.image_data) {
         auto i = static_cast<u32>(img_data.image);
         quad_mats_[i] = unique_ptr<Matrix<QuadData>>
                             (new Matrix<QuadData>(img_data.rows, img_data.columns));
@@ -154,6 +154,6 @@ void QuadHandler::SetActive(EntityID const handle,
     auto& found = found_iter->second;
     found.active_VAO = quad_data.VAO;
     found.VAO_set.emplace(quad_data.VAO);
-    found.image = params.image;
+    found.active_image = params.image;
 
 }

@@ -40,8 +40,8 @@ class AnimationHandler {
 	void Add(EntityID const, std::vector<AnimType> const);
 	void Remove(EntityID const, std::vector<AnimType> const);
 
-	AnimationHandler(	std::shared_ptr<QuadHandler> qh, 
-						std::shared_ptr<PositionHandler> ph) 
+	AnimationHandler(	QuadHandler& qh, 
+						PositionHandler& ph) 
 						: quad_handler_(qh), pos_handler_(ph) {}
 
 private:
@@ -56,7 +56,7 @@ private:
 	void WalkAnim(EntityID const, QuadHandler::QuadParams&, 
 			      double const period, double const new_pos);
 
-	std::shared_ptr<QuadHandler> quad_handler_;
-	std::shared_ptr<PositionHandler> pos_handler_;
+	QuadHandler& quad_handler_;
+	PositionHandler& pos_handler_;
 };
 

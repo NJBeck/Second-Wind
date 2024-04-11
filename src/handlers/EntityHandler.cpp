@@ -4,7 +4,7 @@
 #include <string>
 #include <stdexcept>
 
-
+using std::vector, std::unordered_map, std::unordered_set;
 //EntityHandler::EntityHandler(AnimationHandler* ah, Renderer* r,
 //							 EventHandler* eh, MovementHandler* mh,
 //							 ShaderHandler* sh, PositionHandler* ph) :
@@ -14,6 +14,35 @@
 //	AddRenderer();
 //}
 //
+
+template<>
+EntityID EntityHandler::NewEntity(	EntityHandler::Character const& type) {
+
+
+}
+
+void EntityHandler::AddBehavior(EntityID handle, Behavior bhv) {
+
+	switch (bhv) {
+	case Behavior::Walk:
+		EventBehaviorPriority& evt_bhv = entity_behaviors_[handle].event_priorities;
+		AddBehaviorPriority(evt_bhv, Behavior::Walk,
+			{
+				{EventHandler::Event::KD_W, 0 },
+				{EventHandler::Event::KD_A, 0 },
+				{EventHandler::Event::KD_S, 0 },
+				{EventHandler::Event::KD_D, 0 },
+				{EventHandler::Event::KU_W, 0 },
+				{EventHandler::Event::KU_A, 0 },
+				{EventHandler::Event::KU_S, 0 },
+				{EventHandler::Event::KU_D, 0 }
+			});
+
+		break;
+	}
+
+}
+
 //EntityID EntityHandler::AddCharacter(PositionHandler::Quad quad_pos)
 //{
 //	auto handle = AddEntity(EntityType::Character);
@@ -74,83 +103,6 @@
 //}
 //
 //
-//EntityID EntityHandler::AddEntity(EntityType const ent_type)
-//{
-//	++count;
-//	type_map_[count] = ent_type;
-//	return count;
-//}
-//
-//void EntityHandler::NotifyCharacter(vector<EventHandler::Events> const& evts,
-//									EntityID const handle)
-//{
-//	int inputXDir = 0;
-//	int inputYDir = 0;
-//	for (auto& evt : evts) {
-//		switch (evt) {
-//		case EventHandler::Events::KD_W: {
-//			inputYDir += 1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KD_W });
-//			event_handler_->Add(handle, { EventHandler::Events::KU_W });
-//			anim_handler_->SetActive(handle, 
-//				AnimationHandler::AnimType::PLAYERWALKUP);
-//			break;
-//			}
-//		case EventHandler::Events::KD_A: {
-//			inputXDir += -1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KD_A });
-//			event_handler_->Add(handle, { EventHandler::Events::KU_A });
-//			anim_handler_->SetActive(handle,
-//				AnimationHandler::AnimType::PLAYERWALKLEFT);
-//			break;
-//			}
-//		case EventHandler::Events::KD_S: {
-//			inputYDir += -1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KD_S });
-//			event_handler_->Add(handle, { EventHandler::Events::KU_S });
-//			anim_handler_->SetActive(handle, 
-//				AnimationHandler::AnimType::PLAYERWALKDOWN);
-//			break;
-//			}
-//		case EventHandler::Events::KD_D: {
-//			inputXDir += 1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KD_D });
-//			event_handler_->Add(handle, { EventHandler::Events::KU_D });
-//			anim_handler_->SetActive(handle, 
-//				AnimationHandler::AnimType::PLAYERWALKRIGHT);
-//			break;
-//			}
-//		case EventHandler::Events::KU_W: {
-//			inputYDir += -1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KU_W });
-//			event_handler_->Add(handle, { EventHandler::Events::KD_W });
-//			break;
-//			}
-//		case EventHandler::Events::KU_A: {
-//			inputXDir += 1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KU_A });
-//			event_handler_->Add(handle, { EventHandler::Events::KD_A });
-//			break;
-//			}
-//		case EventHandler::Events::KU_S: {
-//			inputYDir += 1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KU_S });
-//			event_handler_->Add(handle, { EventHandler::Events::KD_S });
-//			break;
-//			}
-//		case EventHandler::Events::KU_D: {
-//			inputXDir += -1;
-//			event_handler_->Remove(handle, { EventHandler::Events::KU_D });
-//			event_handler_->Add(handle, { EventHandler::Events::KD_D });
-//			break;
-//			}
-//		}
-//	}
-//	move_handler_->SetVelocity(handle, 
-//							   { (double)inputXDir, (double)inputYDir });
-//
-//}
-//
 //void EntityHandler::NotifyRenderer(vector<EventHandler::Events> const& evts, 
 //								   EntityID const handle)
 //{
@@ -168,30 +120,118 @@
 //	}
 //}
 
-EntityHandler::Entity::Entity() {
-	ID = AddEntity();
+
+EntityHandler::EntityHandler()
+{
+	event_handler_ = std::make_unique<EventHandler>();
+	timer_ = std::make_unique<Timer>();
+	shader_handler_ = std::make_unique<ShaderHandler>();
+	position_handler_ = std::make_unique<PositionHandler>();
+	move_handler_ = std::make_unique<MovementHandler>(*timer_, *position_handler_);
+	img_handler_ = std::make_unique<ImageHandler>();
+	quad_handler_ = std::make_unique<QuadHandler>(*img_handler_);
+	anim_handler_ = std::make_unique<AnimationHandler>(*quad_handler_, *position_handler_);
+
 }
 
-EntityHandler::Character::Character(PositionHandler::Box const& pos_data)
+void EntityHandler::BehaviorEvent(	EntityID const& handle,
+									EventHandler::Event const& event, 
+									Behavior const& behavior)
 {
-	auto handle = AddEntity(EntityType::Character);
+	switch (behavior) {
+	case EntityHandler::Behavior::Controllable:
+		ControllableEvent(handle, event);
+		break;
+	}
 }
 
-template<>
-EntityID EntityHandler::Add<EntityHandler::Character>(Character const& chara_data)
+void EntityHandler::ControllableEvent(	EntityID const& handle,
+										EventHandler::Event const& evt)
 {
-
+	glm::vec3 input_vec;
+	switch (evt) {
+	case EventHandler::Event::KD_W: {
+		input_vec.y = 1;
+		event_handler_->Remove(handle, { EventHandler::Event::KD_W });
+		event_handler_->Add(handle, { EventHandler::Event::KU_W });
+		anim_handler_->SetActive(handle,
+			AnimationHandler::AnimType::PLAYERWALKUP);
+		break;
+	}
+	case EventHandler::Event::KD_A: {
+		input_vec.x = -1;
+		event_handler_->Remove(handle, { EventHandler::Event::KD_A });
+		event_handler_->Add(handle, { EventHandler::Event::KU_A });
+		anim_handler_->SetActive(handle,
+			AnimationHandler::AnimType::PLAYERWALKLEFT);
+		break;
+	}
+	case EventHandler::Event::KD_S: {
+		input_vec.y = -1;
+		event_handler_->Remove(handle, { EventHandler::Event::KD_S });
+		event_handler_->Add(handle, { EventHandler::Event::KU_S });
+		anim_handler_->SetActive(handle,
+			AnimationHandler::AnimType::PLAYERWALKDOWN);
+		break;
+	}
+	case EventHandler::Event::KD_D: {
+		input_vec.x = 1;
+		event_handler_->Remove(handle, { EventHandler::Event::KD_D });
+		event_handler_->Add(handle, { EventHandler::Event::KU_D });
+		anim_handler_->SetActive(handle,
+			AnimationHandler::AnimType::PLAYERWALKRIGHT);
+		break;
+	}
+	case EventHandler::Event::KU_W: {
+		input_vec.y += 0;
+		event_handler_->Remove(handle, { EventHandler::Event::KU_W });
+		event_handler_->Add(handle, { EventHandler::Event::KD_W });
+		break;
+	}
+	case EventHandler::Event::KU_A: {
+		input_vec.x = 0;
+		event_handler_->Remove(handle, { EventHandler::Event::KU_A });
+		event_handler_->Add(handle, { EventHandler::Event::KD_A });
+		break;
+	}
+	case EventHandler::Event::KU_S: {
+		input_vec.y = 0;
+		event_handler_->Remove(handle, { EventHandler::Event::KU_S });
+		event_handler_->Add(handle, { EventHandler::Event::KD_S });
+		break;
+	}
+	case EventHandler::Event::KU_D: {
+		input_vec.x = 0;
+		event_handler_->Remove(handle, { EventHandler::Event::KU_D });
+		event_handler_->Add(handle, { EventHandler::Event::KD_D });
+		break;
+		}
+	}
+	move_handler_->SetVelocity(handle, glm::normalize(input_vec));
 }
 
-void EntityHandler::Remove(EntityID handle)
+void EntityHandler::MakeEventPriority(	EventBehaviorPriority& ebp, 
+										EventHandler::Event evt,
+										vector<Behavior> const& behavior_priority)
 {
-	RemoveEntity(handle);
-	index_.erase(handle);
+	for (auto& bhv : behavior_priority) {
+		ebp[evt].push_back(bhv);
+	}
+}
+
+void EntityHandler::AddBehaviorPriority(
+	EventBehaviorPriority& ebp,
+	Behavior bhv,
+	unordered_map<EventHandler::Event, u32> const& evts) 
+{
+	for (auto& evt_prio : evts) {
+		ebp[evt_prio.first].insert(evt_prio.second, bhv);
+	}
 }
 
 EntityID EntityHandler::AddEntity()
 {
-	if (used_handles_.size() == 0)
+	if (this->used_handles_.size() == 0)
 	{
 		++highest_count_;
 		return highest_count_;

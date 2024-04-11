@@ -247,3 +247,7 @@ bool PositionHandler::CheckBoxEncompass(Box const box1, Box const box2) const {
 		(box1.pos.z - box1.dims.z / 2 > box2.pos.z + box2.dims.z / 2);
 	return x_check && y_check && z_check;
 }
+
+PositionHandler::Box PositionHandler::GetEntityBox(EntityID const handle) const {
+	return index_.at(handle).entity_box;
+}
