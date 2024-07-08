@@ -6,8 +6,8 @@
 #include <unordered_set>
 #include <memory>
 #include <array>
+#include <optional>
 
-#include "rendering/shader.h"
 #include "ImageHandler.h"
 #include "globals.h"
 #include "utility.h"
@@ -35,14 +35,12 @@ public:
 	// remember to add new active if removing active quad from entity
 	void Remove(EntityID const, std::vector<QuadParams> const&);
 	// returns GLQuadData for that animation state of that quad
-	GLQuadData const GetActiveData(EntityID const handle) const;
+	std::optional<GLQuadData> const GetActiveData(EntityID const handle) const;
 
 	QuadHandler(ImageHandler& image_handler);
 private:
 	//// pairs an entity's active VAO + Image with the set of all of them
 	struct ImageVAOs {
-		ImageHandler::Image active_image;
-		std::unordered_set<ImageHandler::Image> image_set;
 		u32 active_VAO;
 		std::unordered_set<u32> VAO_set;
 	};
@@ -55,9 +53,7 @@ private:
 	// for the row x column of a texture/image
 	struct QuadData {
 		u32 VAO;
-		u32 VBO;
 		u32 count;
 	};
-	static std::array<	std::unique_ptr<MatrixBase<QuadData>>, 
-						static_cast<u32>(ImageHandler::Image::COUNT)> quad_mats_;
+	std::vector<Matrix<QuadData>> quad_mats_;
 };

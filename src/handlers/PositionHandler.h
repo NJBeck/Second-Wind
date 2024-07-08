@@ -27,13 +27,14 @@
 class PositionHandler {
 public:
 	struct Box {
+		Box() = default;
+		Box(Pos const pos_) : pos(pos_) {}	
+		Box(Pos const pos_, Dims const dims_, Dir const dir_): 
+			pos(pos_), dims(dims_), dir(dir_) {}
 		Pos pos = Pos(0.0f);		// position of object center
 		Dims dims = Dims(0.0f);		// xyz lengths of sides
 		Dir dir = Dir(0.0f);		// orientation of object (mostly unused for now)
-		Box() : volume(dims.x* dims.y* dims.z) {}
-	private:
-		friend class PositionHandler;
-		double volume;
+		double GetVolume() { return dims.x * dims.y * dims.z; }
 	};
 
 	void Add(EntityID const, Box const);
@@ -43,8 +44,10 @@ public:
 	void Move(EntityID const, Dir const);
 
 	Box GetEntityBox(EntityID const) const;
+	// gives the entities in the same octants that intersect the given box
+	std::vector<std::pair<EntityID const, Box>> GetEntityBoxes(Box const&);
 
-	PositionHandler();
+	PositionHandler(Box const boundaries);
 private:
 	Box boundaries_;	// boundaries of the map
 	// xyz where 0 represents positive direction (x is the LSb)
@@ -76,8 +79,8 @@ private:
 	};
 	std::unordered_map<EntityID, EntityData> index_;
 
-	u32 max_entity_per_octant = 5;	// max number of entites in an octant before it splits
-	// helper functions
+	u32 max_entity_per_octant = 5;	//max number of entites in an octant before it splits
+	//*********helper functions*******************************************
 
 	// from 'start' in tree_ it stores the leaf_data_ indices for
 	// the given entity box within the given bounding box (parent octant)
@@ -85,8 +88,8 @@ private:
 		Box const pbox, Box const ent_box) const;
 	// finds the Pos and Dims of the given octant of the given Box
 	Box GetOctantBox(Box const, Octant const) const;
-	// Gives the box of the parent octant of the given leaf
-	Box GetParentBox(u32 const leaf_index) const;
+	// Gives the box of the parent to the given octant
+	Box GetParentBox(Box const child_box, Octant const child_oct) const;
 	// check if the boxes intersect anywhere
 	bool CheckBoxIntersect(Box const, Box const) const;
 	// check if Box1 encompasses Box2
@@ -95,7 +98,5 @@ private:
 	// splits into sub octants when too many entities are in the octant
 	void AddToLeaf(EntityID const, Box const ent_box,
 		std::unordered_set<u32>& leaf_indices);
-	// helper for doing recursion on the leaf_indices
-	void MoveHelper(EntityID, EntityData&);
 };
 

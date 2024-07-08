@@ -101,14 +101,13 @@
     <ClInclude Include="src\handlers\MovementHandler.h" />
     <ClInclude Include="src\handlers\PositionHandler.h" />
     <ClInclude Include="src\handlers\QuadHandler.h" />
-    <ClInclude Include="src\handlers\ShaderHandler.hpp" />
+    <ClInclude Include="src\handlers\ShaderHandler.h" />
     <ClInclude Include="src\rendering\Renderer.h" />
-    <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\utility.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game.cpp" />
-    <ClCompile Include="src\glad\glad.c" />
+    <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\handlers\AnimationHandler.cpp" />
     <ClCompile Include="src\handlers\EntityHandler.cpp" />
     <ClCompile Include="src\handlers\EventHandler.cpp" />

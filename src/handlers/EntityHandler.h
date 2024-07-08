@@ -1,7 +1,11 @@
 #pragma once
-// TODO: split the updating of events off into a game logic handler
+// the type of entity is determined by the handlers it is handled by
+// and the behaviors that modify their state
+// events are polled and then handled by each subscribed entity
+// according to their behavior
 #include "SDL2/SDL.h"
 #include <memory>
+#include <deque>
 #include <queue>
 #include <vector>
 
@@ -9,104 +13,72 @@
 #include "EventHandler.h"
 #include "MovementHandler.h"
 #include "rendering/Renderer.h"
-#include "ShaderHandler.hpp"
+#include "ShaderHandler.h"
 #include "globals.h"
 #include "utility.h"
+
 
 class EntityHandler {
 public:
 	EntityHandler();
-
-	void UpdateEvents();
-	// we would like the Add function to guide us with the minimum inputs
-	// to create an instance of the given EntityType
-	template<typename T>
-	EntityID NewEntity(T const& type_args);
 	
-	// gives the attributes and behaviors of T to entity
-	template<typename T>
-	EntityID AddType(EntityID const handle, T const& type_args);
+	EntityID MakePlayer( PositionHandler::Box const);
+	EntityID MakeRenderer();
+	EntityID MakeCamera( PositionHandler::Box const);
+	void ActiveCam(	EntityID const);
 
-	void Remove(EntityID);
-
-	//
-	// Entity Type declarations
-	//
-	struct Entity {
-		Entity();
-	};
-
-	struct Character : Entity{
-		struct InitParams {
-			PositionHandler::Box  position_params;
-			MovementHandler::Velocity  velocity;
-			std::vector<QuadHandler::QuadParams>  quad_params;
-			ShaderHandler::VertexShader  vertex_shader;
-			ShaderHandler::FragmentShader  fragment_shader;
-		};
-		Character(InitParams const&);
-	};
-
-	struct Player : Character{
-		Player(Character::InitParams const&);
-	};
-
-
+	void Remove(EntityID const);
+	void Update();
+	bool Alive();
 private:
-
 	/*
-	entity behavior stuff
-		entities are defined by attributes (ie membership in certain handlers)
-		and behaviors (which define what and when it is added to a handler)
+	entity behavior stuff:
+	entities are defined by attributes (ie membership in certain handlers/have state)
+	and behaviors (which define the modification of the attributes)
 	*/
 	enum class Behavior {
 		Controllable,
-		Walk
+		Walk,
+		Exit
 	};
-	// Events are handled by behaviors in a priority ordering
-	typedef UniqueDeque<Behavior> BehaviorPriority;
-	typedef std::unordered_map<	EventHandler::Event, 
-								BehaviorPriority> EventBehaviorPriority;
-	struct EntityBehaviors {
-		EntityBehaviors(EventBehaviorPriority const& evt_pr,
-						std::unordered_set<Behavior> const& ent_b) :
-						event_priorities(evt_pr), entity_behaviors(ent_b) {};
-		EventBehaviorPriority event_priorities;
-		std::unordered_set<Behavior> entity_behaviors;
-	};
-	// maps an entity to its behaviors and their priorities of execution
-	std::unordered_map<EntityID, EntityBehaviors> entity_behaviors_;
-	// adds the behaviors to the event in the EventBehaviorPriority map in vector order
-	void MakeEventPriority(	EventBehaviorPriority&, EventHandler::Event, 
-							std::vector<Behavior> const&);
-	// adds the given behavior to given EventBehaviorPriority event with the given order
-	// for each event
-	void AddBehaviorPriority(	EventBehaviorPriority&, 
-								Behavior, 
-								std::unordered_map<EventHandler::Event, u32> const&);
-	// adds the behavior to the given entity
-	void AddBehavior(EntityID , Behavior);
 
-	/*
+	// for each entity an event maps to a series of behaviors
+	typedef std::unordered_map<	EventHandler::Event, 
+								std::deque<Behavior>> EventBehaviors;
+	struct EntityData {
+		EventBehaviors event_behaviors;
+		std::unordered_set<Behavior> behavior_set;
+	};
+	std::unordered_map<EntityID, EntityData> index_;
+	// adds the given queue of behaviors to each event
+	void AddBehavior(EntityID const, 
+		std::vector<EventHandler::Event> const&, std::deque<Behavior> const&);
+	void HandleEventBehavior(EntityID const, EventHandler::Event const);
+	/************************************************************************************
 	functions for how each behavior handles its events
 	*/
-	void BehaviorEvent(	EntityID const& handle,
-						EventHandler::Event const& event,
-						Behavior const& behavior);
-	void ControllableEvent(EntityID const& handle, EventHandler::Event const& event);
-
-	/*
+	void ControllableEvent(EntityID const, EventHandler::Event const);
+	void WalkEvent(EntityID const);
+	void ExitEvent();
+	/************************************************************************************
 	entity generation stuff
 	*/
-	EntityID AddEntity();
-	void RemoveEntity(EntityID);
+	EntityID AddEntity();	// generates new handle
+	void RemoveEntity(EntityID);	// retires handle
+
 	EntityID highest_count_;
 	// presents the largest used handle so we can reuse handles
 	std::priority_queue<EntityID> used_handles_;
 
-	/*
+	void AddQuadShader(EntityID const);
+	EntityID MakeCharacter( PositionHandler::Box const, 
+		ShaderHandler::VertexShader const,
+		ShaderHandler::FragmentShader const, 
+		std::unordered_set<AnimationHandler::AnimType> const&);
+	/************************************************************************************
 	handler data members
 	*/
+	bool alive;
 	std::unique_ptr<ImageHandler> img_handler_;
 	std::unique_ptr<QuadHandler> quad_handler_;
 	std::unique_ptr<AnimationHandler> anim_handler_;

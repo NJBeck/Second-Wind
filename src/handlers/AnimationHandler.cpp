@@ -2,7 +2,7 @@
 #include "globals.h"
 
 #include <cmath>
-using std::vector, std::string, std::abs, std::unordered_map;
+using std::vector, std::string, std::abs, std::unordered_map, std::unordered_set;
 
 const unordered_map<AnimationHandler::AnimType,
 					vector<QuadHandler::QuadParams>> 
@@ -53,6 +53,87 @@ const unordered_map<AnimationHandler::AnimType,
 	}
 };
 
+void AnimationHandler::Add(EntityID const handle, 
+						   unordered_set<AnimType> types)
+{
+	auto& ent_data = index_[handle];
+	for (auto& type : types) {
+		ent_data.anims.emplace(type);
+		quad_handler_.Add(handle, anim_quads_.at(type));
+	}
+}
+
+void AnimationHandler::Remove(EntityID const handle, 
+							  unordered_set<AnimType> const types) {
+	auto found = index_.find(handle);
+	if (found != index_.end()) {
+		auto& ent_anims = found->second.anims;
+		for (auto& anim : types) {
+			ent_anims.erase(anim);
+		}
+		if (ent_anims.size() == 0) index_.erase(handle);
+	}
+	else {
+		string err = "cannot remove entity " + std::to_string(handle) + 
+					 " from animation handler";
+		throw std::runtime_error(err);
+	}
+}
+
+void AnimationHandler::ToUpdate(EntityID const handle) {
+	to_update_.emplace(handle);
+}
+
+void AnimationHandler::Update()
+{
+	for (auto handle : to_update_) {
+		auto& ent_data = index_[handle];
+		auto anim_ty = ent_data.active_anim;
+		switch (anim_ty) {
+		case AnimType::PLAYERWALKUP: {
+			auto ent_pos = pos_handler_.GetEntityBox(handle).pos;
+			QuadHandler::QuadParams qp{
+				ImageHandler::Image::WALK_BODY_MALE,
+				3, // row
+				0  // column
+			};
+			WalkAnim(handle, qp, 2.0, ent_pos.y);
+			break;
+		}
+		case AnimType::PLAYERWALKDOWN: {
+			auto ent_pos = pos_handler_.GetEntityBox(handle).pos;
+			QuadHandler::QuadParams qp{
+				ImageHandler::Image::WALK_BODY_MALE,
+				1,
+				0
+			};
+			WalkAnim(handle, qp, 2.0, ent_pos.y);
+			break;
+		}
+		case AnimType::PLAYERWALKLEFT: {
+			auto ent_pos = pos_handler_.GetEntityBox(handle).pos;
+			QuadHandler::QuadParams qp{
+				ImageHandler::Image::WALK_BODY_MALE,
+				2,
+				0
+			};
+			WalkAnim(handle, qp, 2.0, ent_pos.x);
+			break;
+		}
+		case AnimType::PLAYERWALKRIGHT: {
+			auto ent_pos = pos_handler_.GetEntityBox(handle).pos;
+			QuadHandler::QuadParams qp{
+				ImageHandler::Image::WALK_BODY_MALE,
+				0,
+				0
+			};
+			WalkAnim(handle, qp, 2.0, ent_pos.x);
+			break;
+		}
+		}
+	}
+}
+
 void AnimationHandler::WalkAnim(EntityID const handle, 
 								QuadHandler::QuadParams& qp,
 								double const period, double const new_pos) {
@@ -65,15 +146,17 @@ void AnimationHandler::WalkAnim(EntityID const handle,
 	int const cycleLen = 8;
 	// animation selects active quad in row based on how far entity has traveled
 
-	AnimInfo& info = anim_data_[handle];
-	auto prevActive = info.active_quad; // save to check if it changed later
+	AnimInfo& info = index_[handle];
+	// save which step we're on to check if it changed later
+	u32 prev_active = static_cast<u32>(cycleLen * info.state); 
+	u32 new_active;
 	// finding how far we've moved since last update
 	double displacement = abs(new_pos - info.previous);
 	info.previous = new_pos;	// store the new position
 
 	// if no movement then active quad should be idle position
 	if (displacement < 0.000001) {
-		info.active_quad = 0;
+		new_active = 0;
 		info.state = 0.0;	// state saves the progress through the animation cycle
 	}
 	else {
@@ -82,110 +165,23 @@ void AnimationHandler::WalkAnim(EntityID const handle,
 
 		// get the new progress by adding the old progress and the displacement
 		// use modulo over the period to handle the rollover
-		info.state = fmod((info.state + displacement), period);
-		// frequency = how frequently over the period the animation updates
-		double frequency = period / cycleLen;
-		// round up to the nearest multiple of frequency for index to active
+		info.state = fmod(((info.state * period) + displacement), period) / period;
 		// add 1 because 0 is just for the idle animation
-		info.active_quad = static_cast<uint32_t>(info.state / frequency) + 1;
+		new_active = static_cast<u32>(info.state * cycleLen) + 1;
 	}
 
-	if (prevActive != info.active_quad) {
-		qp.columns = info.active_quad;
+	if (prev_active != new_active) {
+		qp.columns = new_active;
 		quad_handler_.SetActive(handle, qp); // sets this one to the active quad
-	}
-}
-
-
-void AnimationHandler::Update(EntityID const handle) {
-	auto found = anim_data_.find(handle);
-	if(found != anim_data_.end()){
-		auto& ent_pos = pos_handler_.GetEntityBox(handle).pos;
-		switch (found->second.active_anim) {
-			case AnimType::PLAYERWALKUP: {
-				QuadHandler::QuadParams qp{
-					ImageHandler::Image::WALK_BODY_MALE,
-					3, // row
-					0  // column
-				};
-				WalkAnim(handle, qp, 4.0, ent_pos.y);
-				break;
-			}
-
-			case AnimType::PLAYERWALKDOWN: {
-				QuadHandler::QuadParams qp{
-					ImageHandler::Image::WALK_BODY_MALE,
-					1,
-					0
-				};
-				WalkAnim(handle, qp, 4.0, ent_pos.y);
-				break;
-			}
-
-			case AnimType::PLAYERWALKLEFT: {
-				QuadHandler::QuadParams qp{
-					ImageHandler::Image::WALK_BODY_MALE,
-					2,
-					0
-				};
-				WalkAnim(handle, qp, 4.0, ent_pos.x);
-				break;
-			}
-
-			case AnimType::PLAYERWALKRIGHT: {
-				QuadHandler::QuadParams qp{
-					ImageHandler::Image::WALK_BODY_MALE,
-					0,
-					0
-				};
-				WalkAnim(handle, qp, 4.0, ent_pos.x);
-				break;
-			}
-		}
 	}
 }
 
 void AnimationHandler::SetActive(EntityID const handle, AnimType tp)
 {
-	// TODO: error catching
-	anim_data_[handle].active_anim = tp;
-}
-
-void AnimationHandler::Add(EntityID const handle, 
-						   vector<AnimType> types)
-{
-	auto found = anim_data_.find(handle);
-	if (found != anim_data_.end()) {
-		for (auto& type : types) {
-			found->second.anims.emplace(type);
-			quad_handler_.Add(handle, anim_quads_.at(type));
-		}
-		found->second.active_anim = types[0];
-	}
-	else {
-		AnimInfo info;
-		for (auto& type : types) {
-			info.anims.emplace(type);
-		}
-		info.active_anim = types[0];
-		anim_data_[handle] = info;
-	}
-
-}
-
-void AnimationHandler::Remove(EntityID const handle, 
-							  vector<AnimType> const types) {
-	auto found = anim_data_.find(handle);
-	if (found != anim_data_.end()) {
-		auto& ent_anims = found->second.anims;
-		for (auto& anim : types) {
-			ent_anims.erase(anim);
-		}
-		if (ent_anims.size() == 0) anim_data_.erase(handle);
-	}
-	else {
-		string err = "cannot remove entity " + std::to_string(handle) + 
-					 " from animation handler";
-		throw std::runtime_error(err);
-	}
+	auto& ent_data = index_[handle];
+	ent_data.active_anim = tp;
+	ent_data.previous = 0;
+	ent_data.state = 0;
+	// set the current quad to the first one of that type
+	quad_handler_.SetActive(handle, anim_quads_.at(tp)[0]);
 }

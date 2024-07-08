@@ -1,107 +1,119 @@
-// TODO: use uniform to scale quads appropriately
+
 #include "Renderer.h"
 #include "utility.h"
-#include "handlers/ShaderHandler.hpp"
 
 #include <iostream>
 #include <array>
 #include <algorithm>
 #include <vector>
 #include <tuple>
+#include "glm/ext.hpp"
 
 using std::vector, std::tuple, std::get;
 using namespace utility;
 
-#define glCheckError() glCheckError_(__FILE__, __LINE__) 
+//#define //glCheckError() //glCheckError_(__FILE__, __LINE__) 
 
-Renderer::Renderer(SDL_Window* w, PositionHandler* ph, 
-                   QuadHandler* qh, AnimationHandler* ah, ShaderHandler* sh)
-    :window(w), pos_handler_(ph), quad_handler_(qh), anim_handler_(ah), 
-    alive(true), shader_handler_(sh)
+Renderer::Renderer( PositionHandler& ph, QuadHandler& qh, 
+                    AnimationHandler& ah, ShaderHandler& sh,
+                    SDL_Window* wind):
+        pos_handler_(ph), quad_handler_(qh), 
+        anim_handler_(ah), shader_handler_(sh), window_(wind)
 {
+
 }
 
 void Renderer::DrawScene()
 {
-    if (!alive) return;
+    GenCameraDrawData(active_cam_);
+
+    auto cam_dat = index_[active_cam_];
     glClear(GL_COLOR_BUFFER_BIT);
 
-    OrthoCam& camera = cameras_[0];
+    for (auto& draw_dat : draw_data_) {
+        //glCheckError();
 
-    PositionHandler::Quad camera_quad = { camera.xPos, camera.yPos,
-                                          camera.width, camera.height };
+        // use its shader program
+        glUseProgram(draw_dat.shader);
+        //glCheckError();
 
-    // get the position info for the entities that are within range
-    auto in_range = pos_handler_->EntitiesInArea(camera_quad);
-
-    // vectors to put the quads and positions into
-    vector<tuple<EntityID, PositionHandler::Quad, 
-                 QuadHandler::GLQuadData, Shader> > ent_data;
-    for (auto& ent : in_range) {
-        // update the animation so the correct quad is selected
-        anim_handler_->Update(ent.handle);
-        // retrieve data for quads if it has one
-        auto GLData = quad_handler_->GetActiveData(ent.handle);
-        if (GLData.texture != 0 || GLData.VAO != 0) {
-            auto ent_shader = shader_handler_->GetShader(ent.handle);
-            ent_data.emplace_back(ent.handle, ent.quad, GLData, ent_shader);
-        }
-    }
-
-    for (uint32_t i = 0; i < ent_data.size(); ++i) {
-        auto ent_shader = get<3>(ent_data[i]);
-        auto GLdata = get<2>(ent_data[i]);
-        auto position = get<1>(ent_data[i]);
-        auto ent_id = get<0>(ent_data[i]);
-        // figure out where on the screen the quad should go
-        float screenX = 2 * (position.xPos - camera_quad.xPos) 
-                           / camera_quad.width - 1;
-        float screenY = 2 * (position.yPos - camera_quad.yPos) 
-                           / camera_quad.height - 1;
-        // scale uniform to draw the entity at the right size on screen
-        float scale = position.width / camera.width;
+        glUniform1i(glGetUniformLocation(draw_dat.shader, "texture1"), 0);
+        //glCheckError();
 
         // specify texture unit
         glActiveTexture(GL_TEXTURE0);
-        glCheckError();
+        //glCheckError();
 
         // bind the quad's texture
-        glBindTexture(GL_TEXTURE_2D, GLdata.texture);
-        glCheckError();
+        glBindTexture(GL_TEXTURE_2D, draw_dat.texture);
+        //glCheckError();
 
-        // use its shader program
-        ent_shader.use();
-        glCheckError();
-
-        ent_shader.setVec2("screenPos", screenX, screenY);
-        ent_shader.setFloat("scale", scale);
-
-        // specify the texture unit for the uniform
-        ent_shader.setInt("texture1", 0);
-        glCheckError();
+        // uniforms for vertex shader
+        glUniformMatrix4fv( glGetUniformLocation(draw_dat.shader, "model"), 
+                            1, GL_FALSE, &draw_dat.model_mat[0][0]);
+        glUniformMatrix4fv( glGetUniformLocation(draw_dat.shader, "view"),
+                            1, GL_FALSE, &cam_dat.view[0][0]);
+        glUniformMatrix4fv( glGetUniformLocation(draw_dat.shader, "projection"),
+                            1, GL_FALSE, &cam_dat.projection[0][0]);
 
         // bind the quad's VAO
-        glBindVertexArray(GLdata.VAO);
-        glCheckError();
+        glBindVertexArray(draw_dat.VAO);
+        //glCheckError();
 
         // enable blending for the alpha
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glCheckError();
+        //glCheckError();
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glCheckError();
+        //glCheckError();
     }
-    SDL_GL_SwapWindow(window);
+    SDL_GL_SwapWindow(window_);
+    draw_data_.clear();
+}
+
+glm::mat4 Renderer::MakeViewMat(EntityID const cam_handle, glm::vec3 const look_at)
+{
+    glm::vec3 cam_pos = pos_handler_.GetEntityBox(cam_handle).pos;
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    return glm::lookAt(cam_pos, look_at, up);
+}
+
+void Renderer::GenCameraDrawData(EntityID const cam)
+{
+    utility::CheckMapForEntity(cam, index_);
+    CamData cam_data_ = index_[cam];
+    PositionHandler::Box cam_pos_data = pos_handler_.GetEntityBox(cam);
+    auto entity_pos_data = pos_handler_.GetEntityBoxes(cam_pos_data);
+    for (auto& ent_pos : entity_pos_data) {
+        DrawData ent_draw_data;
+        ent_draw_data.model_mat 
+            = glm::translate(ent_draw_data.model_mat, ent_pos.second.pos);
+        if (auto quad_data = quad_handler_.GetActiveData(ent_pos.first)) {
+            ent_draw_data.texture = quad_data->texture;
+            ent_draw_data.VAO = quad_data->VAO;
+            ent_draw_data.shader = shader_handler_.GetActiveProgram(ent_pos.first);
+            draw_data_.push_back(ent_draw_data);
+        }
+    }
 }
 
 
-Renderer::~Renderer() {
-    SDL_DestroyWindow(window);
-
-    SDL_Quit();
+void Renderer::Exit() {
+    SDL_DestroyWindow(window_);
+    window_ = NULL;
 }
 
-void Renderer::AddCamera(OrthoCam const& cam) {
-    cameras_.emplace_back(cam);
+void Renderer::AddOrthoCamera(EntityID const handle, float width,
+                        float height, glm::vec3 const look_at) {
+    CamData cam_data;
+    cam_data.view = MakeViewMat(handle, look_at);
+    cam_data.projection = glm::ortho(-width / 2, width / 2,
+        -height / 2, height / 2);
+    index_[handle] = cam_data;
+}
+
+void Renderer::ActiveCam(EntityID const cam)
+{
+    active_cam_ = cam;
 }

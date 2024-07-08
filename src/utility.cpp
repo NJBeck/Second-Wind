@@ -81,6 +81,7 @@ namespace utility {
     }
 
 }
+
 Timer::Timer() : perfFreq(SDL_GetPerformanceFrequency()), startTime(SDL_GetPerformanceCounter()), lastTime(0.0) {}
 
 float Timer::elapsedMs() {

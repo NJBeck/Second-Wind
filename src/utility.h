@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <tuple>
-#include <errors.h>
+#include <deque>
 
 #include "glad/glad.h"
 #include "globals.h"
@@ -76,6 +76,14 @@ namespace utility {
         if (uset.find(key) == uset.end()) return false;
         else return true;
     }
+
+    template<typename T>
+    inline void CheckMapForEntity(EntityID const handle, std::unordered_map<EntityID, T> const& map_) {
+        auto found = map_.find(handle);
+        if (found == map_.end()) {
+            Log("", "searching map for", "Entity" + std::to_string(handle));
+        }
+    }
 }
 
 class Timer {
@@ -109,126 +117,4 @@ public:
     }
 };
 
-template<typename T>
-concept Hashable = requires(T t) {
-    { std::hash<T>{}(t) };
-};
 
-// to store hashable objects in a queue so there are no repeats
-template<Hashable T>
-class UniqueDeque : public std::deque<T> {
-    // TODO: implement the other functions
-public:
-    template<typename... Args>
-    void emplace_back(Args&&... args) {
-        T new_object(std::forward<Args>(args)...);
-        // emplace .second tells if emplacement was successful
-        if (unique_map_.emplace(newobject, std::deque<T>::size()).second) {
-            std::deque<T>::emplace_back(std::move(newobject));
-        }
-    }
-
-    void push_back(T const& object) {
-        if (unique_map_.emplace(object, std::deque<T>::size()).second) {
-            std::deque<T>::push_back(object);
-        }
-    }
-
-    void push_back(T&& object) {
-        if (unique_map_.emplace(std::move(object), std::deque<T>::size()).second) {
-            std::deque<T>::push_back(std::move(object));
-        }
-    }
-
-    void insert(typename std::deque<T>::const_iterator position, T const& object) {
-        std::deque<T>::insert(position, object);
-        unique_map_[object] = std::distance(std::deque<T>::begin(), position));
-    }
-
-    void insert(size_t index, T const& object) {
-        typename std::deque<T>::const_iterator pos = std::deque<T>::cbegin() + index;
-        insert(pos, object);
-    }
-
-    void push_front(T const& object){
-        insert(0, object);
-    }
-    
-    void pop_front(){
-        T& object = std::deque<T>::front();
-        unique_map_.erase(object);
-        std::deque<T>::pop_front();
-    }
-
-    void pop_back(){
-        T& object = std::deque<T>::back();
-        unique_map_.erase(object);
-        std::deque<T>::pop_back();
-    }
-
-    void erase(size_t index) {
-        T& object = std::deque<T>::at(index);
-        unique_map_.erase(object);
-        std::deque<T>::erase(std::deque<T>::begin() + index);
-    }
-
-    void erase(T const& object) {
-        auto it = unique_map_.find(object);
-        if (it != unique_map_.end()) {
-            std::deque<T>::erase(std::deque<T>::begin() + it->second);
-            unique_map_.erase(it);
-        }
-    }
-    // const only because if they modify it then the map would have to be updated
-    T const& operator[](size_t index) const {
-        return std::deque<T>::at(index);
-    }
-    // deleted non-const []
-    template<typename U = T>
-    typename std::enable_if<!std::is_const<U>::value, T&>::type
-        operator[](size_t index) = delete;
-
-    // Modify an item at a specific index
-    void modify(size_t index, T const& new_object) {
-        auto it = std::next(std::deque<T>::begin(), index);
-        T old_item = *it;
-        *it = new_object;
-        // Update map if the item has changed
-        if (old_item != new_object) {
-            unique_map_.erase(old_item);
-            unique_map_[new_object] = index;
-        }
-    }
-
-    void modify(size_t index, T&& new_object) {
-        auto it = std::next(std::deque<T>::begin(), index);
-        T old_item = std::move(*it);
-        *it = std::move(new_object);
-        // Update map if the item has changed
-        if (old_item != *it) {
-            unique_map_.erase(old_item);
-            unique_map_[*it] = index;
-        }
-    }
-
-    typename std::deque<T>::const_iterator find(T const& item) const {
-        auto it = uniqueMap_.find(item);
-        if (it != uniqueMap_.end()) {
-            return std::deque<T>::begin() + it->second;
-        }
-        return std::deque<T>::end();
-    }
-
-    size_t get_index(T const& item) const {
-        auto it = uniqueMap_.find(item);
-        if (it != uniqueMap_.end()) {
-            return it->second;
-        }
-        // indicate not found by returning size of deque
-        return std::deque<T>::size();
-    }
-
-private:
-    // object to index
-    std::unordered_map<T, size_t> unique_map_;
-};

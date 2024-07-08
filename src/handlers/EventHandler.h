@@ -5,7 +5,9 @@
 #include <unordered_map>
 #include <utility>
 #include <unordered_set>
+#include <optional>
 
+#include "utility.h"
 #include "globals.h"
 
 class EventHandler {
@@ -67,32 +69,35 @@ public:
 	KU_X,
 	KU_Y,
 	KU_Z,
-	KU_ESC,
-	QUIT
+	KU_ESC
 };
-	typedef std::deque<Event> EventQueue;
+	EventHandler();
 	typedef std::unordered_set<Event> EventSet;
-	// subscribes given entity to given events
-	void Add(EntityID const, EventSet const);
+	// subscribes given entity to given events in current queue frame
+	void Subscribe(EntityID const, EventSet const&);
+	// removes the entity from the subscibed events in the active frame
 	void Remove(EntityID const, EventSet const);
-	// populates the notifications
+	//// pushes new frame of suscriptions into the subscriptions queue
+	//void PushSubscriptionFrame();
+	//void PopSubscriptionFrame();
+	// populates the polled_events_
 	void PollEvents();
-	// clears events for all entities
 	void ClearEvents();
-	// clears the notifications for the given entity
-	void ClearNotifications(EntityID const);
-	// returns events this entity is sub'd to that have occurred since last checking
-	EventQueue const Notifications(EntityID const) const;
-
+	struct Notification {
+		Event event;
+		std::unordered_set<EntityID> entities;
+	};
+	typedef std::vector<Notification> NotificationFrame;
+	typedef std::deque<NotificationFrame> Notifications;
+	// returns the subset of subscriptions_ that matches the polled events
+	Notifications GetNotifications();
 private:
-	std::unordered_map<EntityID, EventSet> index_;
+	std::vector<Event> polled_events_;
 	// the map of entities which are subscribed to an event
-	std::unordered_map<Event,
-					   std::unordered_set<EntityID> > subscriptions_;
-	// maps entities to their notifications
-	std::unordered_map<	EntityID, 
-						EventQueue > notifications_;
+	typedef std::unordered_map<Event, std::unordered_set<EntityID>> Subscriptions;
+	typedef std::deque<Subscriptions> SubscriptionsQueue;
+	SubscriptionsQueue subscriptions_;
 	// converts SDL event to our enum
-	Event SDLtoEvent(SDL_Event const) const;
+	std::optional<Event> SDLtoEvent(SDL_Event const) const;
 
 };

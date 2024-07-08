@@ -1,46 +1,34 @@
-#include "ShaderHandler.hpp"
+#include "ShaderHandler.h"
 #include "utility.h"
+#include <fstream>
 
-using std::string;
+using std::string, std::unordered_map;
 
-void ShaderHandler::Add(EntityID const handle, 
+void ShaderHandler::Add(EntityID const handle,
                         VertexShader const vs, 
                         FragmentShader const fs)
 {
     // make the shaders if they dont already exist
     // if NONE then skip
+    auto& entity_data = index_[handle];
     if (vs != VertexShader::NONE) {
-        auto& entity_data = index_[handle];
         auto& entity_vs = entity_data.vertex_shaders;
-        // if not yet registered to entity then add it
-        auto found_entity_vs = entity_vs.find(vs);
-        if (found_entity_vs == entity_vs.end()) {
-            // if shader not yet compiled then do that first
-            auto& found_vs = vertex_shaders_.find(vs);
-            if (found_vs == vertex_shaders_.end()) {
-                u32 shader_enum = static_cast<u32>(vs);
-                vertex_shaders_[vs] = { MakeNewShader(  ShaderType::VERTEX,
-                                                        shader_enum), 0 };
-            }
-            found_vs->second.count++;
+        entity_vs.emplace(vs);
+        // if shader not yet compiled then do that
+        auto found_vs = vertex_shaders_.find(vs);
+        if (found_vs == vertex_shaders_.end()) {
+            u32 shader_enum = static_cast<u32>(vs);
+            MakeNewShader(  ShaderType::VERTEX, shader_enum);
         }
-        entity_vs.insert(vs);
     }
     if (fs != FragmentShader::NONE) {
-        auto& entity_fs = index_[handle].fragment_shaders;
-        // if not yet registered to entity then add it
-        auto found_entity_fs = entity_fs.find(fs);
-        if (found_entity_fs == entity_fs.end()) {
-            // if shader not yet compiled then do that first
-            auto& found_fs = fragment_shaders_.find(fs);
-            if (found_fs == fragment_shaders_.end()) {
-                u32 shader_enum = static_cast<u32>(fs);
-                fragment_shaders_[fs] = { MakeNewShader(ShaderType::FRAGMENT, 
-                                                        shader_enum), 0 };
-            }
-            found_fs->second.count++;
+        auto& entity_fs = entity_data.fragment_shaders;
+        entity_fs.emplace(fs);
+        auto found_fs = fragment_shaders_.find(fs);
+        if (found_fs == fragment_shaders_.end()) {
+            u32 shader_enum = static_cast<u32>(fs);
+            MakeNewShader(ShaderType::FRAGMENT, shader_enum);
         }
-        entity_fs.insert(fs);
     }
 }
 
@@ -84,7 +72,9 @@ u32 ShaderHandler::GetActiveProgram(EntityID const handle)
     if (vs == VertexShader::NONE || fs == FragmentShader::NONE) {
         utility::Log("ShaderHandler", "getting program for ", "entity with no shader");
     }
-    return program_matrix_(static_cast<u32>(vs), static_cast<u32>(fs)).ID;
+    auto found_vs = shader_programs_.find(vs);
+    auto found_fs = found_vs->second.find(fs);
+    return found_fs->second.ID;
 }
 
 void ShaderHandler::SetActiveShader(EntityID const handle,
@@ -93,75 +83,56 @@ void ShaderHandler::SetActiveShader(EntityID const handle,
 {
     Add(handle, vs, fs);
     auto& entity_data = index_[handle];
-    auto& active_vs = entity_data.active_vertex_shader;
-    auto& active_fs = entity_data.active_fragment_shader;
-    active_vs = vs;
-    active_fs = fs;
+    entity_data.active_vertex_shader = vs;
+    entity_data.active_fragment_shader = fs;
+    GLuint vs_id = vertex_shaders_[vs].ID;
+    GLuint fs_id = fragment_shaders_[fs].ID;
     if (vs != VertexShader::NONE && fs != FragmentShader::NONE) {
-        u32 vs_num = static_cast<u32>(vs);
-        u32 fs_num = static_cast<u32>(fs);
-        auto& ID = program_matrix_(vs_num, fs_num).ID;
-        auto& count = program_matrix_(vs_num, fs_num).count;
-        if (count == 0) {
-            if (vertex_shaders_[vs].count == 0) {
-                MakeNewShader(ShaderType::VERTEX, vs_num);
-            }
-            if (fragment_shaders_[fs].count == 0) {
-                MakeNewShader(ShaderType::FRAGMENT, fs_num);
-            }
-            u32 vs_ID = vertex_shaders_[vs].ID;
-            u32 fs_ID = fragment_shaders_[fs].ID;
-            auto new_ID = glCreateProgram();
-            glAttachShader(new_ID, vs_ID);
-            glAttachShader(new_ID, fs_ID);
-            glLinkProgram(new_ID);
-            CheckCompileErrors(ID, "PROGRAM");
-            ID = new_ID;
+        auto found_vs = shader_programs_.find(vs);
+        // if no program corresponds to vs, fs pair then make one
+        if (found_vs == shader_programs_.end()) {
+            shader_programs_[vs][fs] = { MakeNewProgram(vs_id, fs_id), 1 };
         }
-        count++;
+        else {
+            auto fs_programs = found_vs->second;
+            auto found_fs = fs_programs.find(fs);
+            if (found_fs == fs_programs.end()) {
+                shader_programs_[vs][fs] = { MakeNewProgram(vs_id, fs_id), 1 };
+            }
+        }
     }
 }
 
-std::string ShaderHandler::GetFragShaderPath(FragmentShader frag)
+std::string ShaderHandler::GetShaderPath(ShaderType const type_, u32 shader_enum)
 {
-    switch (frag) {
-    case FragmentShader::QUAD: {
-        return utility::getDataPath("quadshader.fs");
-    }
-    }
-}
+    unordered_map<u32, string> vs_path{ {1, "quadshader.vs"}
+    };
+    unordered_map<u32, string> fs_path{ {1, "quadshader.fs"}
+    };
 
-std::string ShaderHandler::GetVertShaderPath(VertexShader vert) {
-    switch (vert) {
-    case VertexShader::QUAD: {
-        return utility::getDataPath("quadshader.vs");
-    }
+    switch (type_) {
+    case ShaderType::VERTEX:
+        return utility::getDataPath(vs_path[shader_enum]);
+        break;
+    case ShaderType::FRAGMENT:
+        return utility::getDataPath(fs_path[shader_enum]);
+        break;
     }
 }
 
 GLuint ShaderHandler::MakeNewShader(ShaderType const sh_type, u32 const enum_value)
 {
-    // 1. retrieve the vertex/fragment source code from filePath
+    // 1. retrieve the vertex/fragment source code from file
     std::string code;
     std::ifstream sh_fstream;
     // ensure ifstream objects can throw exceptions:
     sh_fstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try
     {
-        string source;
-        switch (sh_type) {
-            case ShaderType::VERTEX:
-
-                source = GetVertShaderPath(static_cast<VertexShader>(enum_value));
-                break;
-
-            case ShaderType::FRAGMENT:
-                source = GetFragShaderPath(static_cast<FragmentShader>(enum_value));
-                break;
-        }
+        string source_path = GetShaderPath(sh_type, enum_value);
 
         // open files
-        sh_fstream.open(source);
+        sh_fstream.open(source_path);
         std::stringstream sh_str_stream;
         // read file's buffer contents into streams
         sh_str_stream << sh_fstream.rdbuf();
@@ -175,29 +146,40 @@ GLuint ShaderHandler::MakeNewShader(ShaderType const sh_type, u32 const enum_val
         std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
     }
     const char* sh_code = code.c_str();
-    // 2. compile shader
-    u32 sh_ID;
-    // vertex shader
-    sh_ID = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(sh_ID, 1, &sh_code, NULL);
-    glCompileShader(sh_ID);
-    // check and store
 
     switch (sh_type) {
-        case ShaderType::VERTEX:
-            VertexShader vs = static_cast<VertexShader>(enum_value);
-            CheckCompileErrors(sh_ID, "VERTEX");
-            vertex_shaders_[vs] = { sh_ID, 1 };
-            break;
+    case ShaderType::VERTEX: {
+        GLuint sh_ID = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(sh_ID, 1, &sh_code, NULL);
+        glCompileShader(sh_ID);
+        VertexShader vs = static_cast<VertexShader>(enum_value);
+        CheckCompileErrors(sh_ID, "VERTEX");
+        vertex_shaders_[vs] = { sh_ID, 1 };
+        return sh_ID;
+    }
+    break;
 
-        case ShaderType::FRAGMENT:
-            FragmentShader fs = static_cast<FragmentShader>(enum_value);
-            CheckCompileErrors(sh_ID, "FRAGMENT");
-            fragment_shaders_[fs] = { sh_ID, 1 };
+    case ShaderType::FRAGMENT: {
+        GLuint sh_ID = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(sh_ID, 1, &sh_code, NULL);
+        glCompileShader(sh_ID);
+        FragmentShader fs = static_cast<FragmentShader>(enum_value);
+        CheckCompileErrors(sh_ID, "FRAGMENT");
+        fragment_shaders_[fs] = { sh_ID, 1 };
+        return sh_ID;
+    }
             break;
     }
+}
 
-    return sh_ID;
+GLuint ShaderHandler::MakeNewProgram(GLuint const vs, GLuint const fs)
+{
+    auto ID = glCreateProgram();
+    glAttachShader(ID, vs);
+    glAttachShader(ID, fs);
+    glLinkProgram(ID);
+    CheckCompileErrors(ID, "PROGRAM");
+    return ID;
 }
 
 void ShaderHandler::CheckCompileErrors(GLuint shader, std::string type)

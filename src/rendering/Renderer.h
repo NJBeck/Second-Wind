@@ -4,34 +4,46 @@
 
 #include "handlers/PositionHandler.h"
 #include "handlers/AnimationHandler.h"
-#include "handlers/EventHandler.h"
-#include "handlers/ShaderHandler.hpp"
+#include "handlers/ShaderHandler.h"
 
-#define LATEST_SDL_ERROR std::cout << "SDL failure:" << \
-							SDL_GetError() << std::endl;
+//#define LATEST_SDL_ERROR std::cout << "SDL failure:" << \
+//							SDL_GetError() << std::endl;
 
 
 class Renderer
 {
 public:
-	struct OrthoCam: public PositionHandler::Quad {
-		// PositionHandler::Quad quad; // world space info of camera
-		int w_width;	// camera width in pixels
-		int w_height;
-	};
-	Renderer(SDL_Window*, PositionHandler*, QuadHandler*, AnimationHandler*,
-			 ShaderHandler*);
-	~Renderer();
-	// draws entities located within the given camera's range
+	Renderer(PositionHandler&, QuadHandler&, AnimationHandler&,
+			 ShaderHandler&, SDL_Window*);
+	// draws entities located within the active camera's view
 	void DrawScene();
-	void AddCamera(OrthoCam const&);
-	bool alive;
+	// width and height being the area covered in world units
+	void AddOrthoCamera(EntityID const, float width, 
+						float height, glm::vec3 const look_at );
+	void ActiveCam(	EntityID const);
+	void Exit();
 private:
-	SDL_Window* window;
-	PositionHandler* pos_handler_;
-	QuadHandler* quad_handler_;
-	AnimationHandler* anim_handler_;
-	ShaderHandler* shader_handler_;
-	std::vector<OrthoCam> cameras_; // 0th item is active cam
+	void GenCameraDrawData(EntityID const cam);	// finds the entities in camera
+	glm::mat4 MakeViewMat(EntityID const cam, glm::vec3 const look_at);
+	struct DrawData {
+		GLuint texture;
+		GLuint VAO;
+		GLuint shader;
+		glm::mat4 model_mat{ 1.0f };
+	};
+	// stores the data for drawing an object
+	std::vector<DrawData> draw_data_;
+	struct CamData {
+		glm::mat4 projection{ 1.0f };
+		glm::mat4 view{ 1.0f };
+	};
+	// stores the data for each camera 
+	std::unordered_map<EntityID, CamData> index_;
+	EntityID active_cam_;
+	PositionHandler& pos_handler_;
+	QuadHandler& quad_handler_;
+	AnimationHandler& anim_handler_;
+	ShaderHandler& shader_handler_;
+	SDL_Window* window_;
 };
 
